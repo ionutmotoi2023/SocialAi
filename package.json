@@ -19,8 +19,8 @@
     "db:seed": "prisma db seed",
     "db:studio": "prisma studio",
     "type-check": "tsc --noEmit",
-    "railway:build": "NEXT_BUILD_SKIP_ENV_VALIDATION=1 npm run build",
-    "railway:start": "NEXT_BUILD_SKIP_ENV_VALIDATION=1 npm run start"
+    "railway:build": "npm run build",
+    "railway:start": "npm run start"
   },
   "dependencies": {
     "@next-auth/prisma-adapter": "^1.0.7",

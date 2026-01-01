@@ -1,0 +1,8 @@
+{
+  "NEXTAUTH_URL": "https://socialai-production-da70.up.railway.app",
+  "NEXTAUTH_SECRET": "7a251bba7f7897d34aeef867127fffee1d244237387b665e34c8379ff4d74688",
+  "OPENAI_API_KEY": "sk-dummy-key-for-build-only-replace-with-real",
+  "DATABASE_URL": "postgresql://postgres:HZlxTekzjERdCfxJSObKSiIOovpcfgSW@shortline.proxy.rlwy.net:38171/railway",
+  "JWT_SECRET": "f34118ee1deac8247b9224ce08a79005ac4ac423bb5a55edcbf1314a9fd96c23",
+  "NEXT_BUILD_SKIP_ENV_VALIDATION": "true"
+}

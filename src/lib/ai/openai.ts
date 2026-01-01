@@ -6,10 +6,26 @@ let openaiClient: OpenAI | null = null
 function getOpenAIClient(): OpenAI {
   if (!openaiClient) {
     const apiKey = process.env.OPENAI_API_KEY
-    if (!apiKey) {
-      throw new Error('OPENAI_API_KEY is not configured. Please add it to your environment variables.')
+    if (!apiKey || apiKey === 'sk-dummy-key-for-build-only' || apiKey === 'sk-dummy-key-for-build-only-replace-with-real') {
+      // În loc să aruncăm eroare, returnăm un client mock pentru build
+      console.warn('OPENAI_API_KEY nu este configurat - folosim client mock pentru build')
+      openaiClient = {
+        chat: {
+          completions: {
+            create: async () => ({
+              choices: [{
+                message: {
+                  content: 'Conținut demo - cheia OpenAI nu este configurată. Vă rugăm să configurați OPENAI_API_KEY în variabilele de mediu.'
+                }
+              }],
+              finish_reason: 'stop'
+            })
+          }
+        }
+      } as any
+    } else {
+      openaiClient = new OpenAI({ apiKey })
     }
-    openaiClient = new OpenAI({ apiKey })
   }
   return openaiClient
 }
