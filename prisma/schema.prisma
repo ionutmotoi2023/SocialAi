@@ -1,0 +1,232 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Multi-tenant architecture with row-level security
+model Tenant {
+  id          String   @id @default(cuid())
+  name        String
+  domain      String?  @unique
+  logo        String?
+  website     String?
+  industry    String?
+  description String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  users           User[]
+  aiConfigs       AIConfig[]
+  brandAssets     BrandAsset[]
+  posts           Post[]
+  contentSources  ContentSource[]
+  linkedinIntegrations LinkedInIntegration[]
+  invitations     Invitation[]
+  aiLearningData  AILearningData[]
+
+  @@map("tenants")
+}
+
+// User roles: SUPER_ADMIN, TENANT_ADMIN, EDITOR, VIEWER
+enum UserRole {
+  SUPER_ADMIN
+  TENANT_ADMIN
+  EDITOR
+  VIEWER
+}
+
+model User {
+  id        String    @id @default(cuid())
+  email     String    @unique
+  name      String?
+  avatar    String?
+  role      UserRole  @default(VIEWER)
+  tenantId  String
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+  
+  // Relations
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  posts       Post[]
+  invitations Invitation[]
+
+  @@map("users")
+}
+
+// AI Configuration per tenant
+model AIConfig {
+  id              String   @id @default(cuid())
+  tenantId        String   @unique
+  selectedModel   String   @default("gpt-4-turbo") // gpt-4-turbo, claude-3-opus, gemini-pro
+  brandVoice      String?  // Custom brand voice instructions
+  tonePreference  String   @default("professional") // professional, casual, enthusiastic, technical
+  postLength      String   @default("medium") // short, medium, long
+  hashtagStrategy String   @default("moderate") // minimal, moderate, extensive
+  includeEmojis   Boolean  @default(true)
+  includeCTA      Boolean  @default(true)
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("ai_configs")
+}
+
+// Brand assets (logos, watermarks)
+model BrandAsset {
+  id               String   @id @default(cuid())
+  tenantId         String
+  name             String
+  type             String   // logo, watermark, template
+  fileUrl          String
+  fileSize         Int?
+  mimeType         String?
+  isDefault        Boolean  @default(false)
+  watermarkSettings Json?   // position, opacity, size settings
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("brand_assets")
+}
+
+// Content sources (RSS, competitor monitoring, news)
+model ContentSource {
+  id          String   @id @default(cuid())
+  tenantId    String
+  name        String
+  type        String   // rss, website, competitor, news
+  url         String
+  isActive    Boolean  @default(true)
+  lastChecked DateTime?
+  settings    Json?    // scraping settings, keywords, etc.
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("content_sources")
+}
+
+// LinkedIn integration per tenant
+model LinkedInIntegration {
+  id           String    @id @default(cuid())
+  tenantId     String    @unique
+  accessToken  String
+  refreshToken String?
+  expiresAt    DateTime?
+  linkedinId   String
+  profileName  String?
+  profileImage String?
+  isActive     Boolean   @default(true)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("linkedin_integrations")
+}
+
+// Posts with AI generation tracking
+enum PostStatus {
+  DRAFT
+  PENDING_APPROVAL
+  APPROVED
+  SCHEDULED
+  PUBLISHED
+  FAILED
+}
+
+model Post {
+  id                String     @id @default(cuid())
+  tenantId          String
+  userId            String
+  title             String?
+  content           String
+  mediaUrls         String[]   // Array of image/video URLs
+  scheduledAt       DateTime?
+  publishedAt       DateTime?
+  status            PostStatus @default(DRAFT)
+  platform          String     @default("linkedin")
+  linkedinPostUrl   String?    // URL of published post on LinkedIn
+  
+  // AI Generation metadata
+  aiGenerated       Boolean    @default(false)
+  aiModel           String?
+  aiConfidence      Float?     // 0.0 to 1.0
+  originalPrompt    String?
+  generationTime    Int?       // milliseconds
+  
+  // User feedback for learning
+  userApproved      Boolean?
+  userModifications String?    // What user changed
+  engagementScore   Float?     // Actual performance
+  
+  createdAt         DateTime   @default(now())
+  updatedAt         DateTime   @updatedAt
+  
+  // Relations
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@map("posts")
+}
+
+// AI Learning data for continuous improvement
+model AILearningData {
+  id                String   @id @default(cuid())
+  tenantId          String
+  postId            String?  // Related post if applicable
+  interactionType   String   // user_edit, approval, rejection, regeneration
+  originalContent   String?
+  modifiedContent   String?
+  userFeedback      String?
+  improvementScore  Float?   // How much this improved AI accuracy
+  patternDetected   String?  // What pattern was learned
+  createdAt         DateTime @default(now())
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("ai_learning_data")
+}
+
+// Team invitations
+enum InvitationStatus {
+  PENDING
+  ACCEPTED
+  EXPIRED
+  CANCELLED
+}
+
+model Invitation {
+  id        String           @id @default(cuid())
+  email     String
+  role      UserRole
+  tenantId  String
+  invitedBy String
+  status    InvitationStatus @default(PENDING)
+  expiresAt DateTime
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Relations
+  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inviter   User   @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+
+  @@unique([email, tenantId])
+  @@map("invitations")
+}

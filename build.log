@@ -1,0 +1,42 @@
+
+> social-media-ai-saas@1.0.0 build
+> prisma generate && next build
+
+Prisma schema loaded from prisma/schema.prisma
+
+✔ Generated Prisma Client (v5.22.0) to ./node_modules/@prisma/client in 220ms
+
+Start by importing your Prisma Client (See: https://pris.ly/d/importing-client)
+
+Tip: Need your database queries to be 1000x faster? Accelerate offers you that and more: https://pris.ly/tip-2-accelerate
+
+ ⚠ Invalid next.config.js options detected: 
+ ⚠     "env.DATABASE_URL" is missing, expected string
+ ⚠     "env.NEXTAUTH_URL" is missing, expected string
+ ⚠     "env.NEXTAUTH_SECRET" is missing, expected string
+ ⚠     Unrecognized key(s) in object: 'telemetry'
+ ⚠ See more info here: https://nextjs.org/docs/messages/invalid-next-config
+   ▲ Next.js 14.0.4
+
+   Creating an optimized production build ...
+ ✓ Compiled successfully
+   Linting and checking validity of types ...
+   Collecting page data ...
+tl [Error]: The OPENAI_API_KEY environment variable is missing or empty; either provide it, or instantiate the OpenAI client with an apiKey option, like new OpenAI({ apiKey: 'My API Key' }).
+    at new d0 (/home/user/webapp/.next/server/chunks/6168.js:19:30649)
+    at 80481 (/home/user/webapp/.next/server/app/api/autopilot/generate/route.js:1:3637)
+    at t (/home/user/webapp/.next/server/webpack-runtime.js:1:143)
+    at 11998 (/home/user/webapp/.next/server/app/api/autopilot/generate/route.js:1:1508)
+    at t (/home/user/webapp/.next/server/webpack-runtime.js:1:143)
+    at r (/home/user/webapp/.next/server/app/api/autopilot/generate/route.js:18:2883)
+    at /home/user/webapp/.next/server/app/api/autopilot/generate/route.js:18:2926
+    at t.X (/home/user/webapp/.next/server/webpack-runtime.js:1:1275)
+    at /home/user/webapp/.next/server/app/api/autopilot/generate/route.js:18:2896
+    at Object.<anonymous> (/home/user/webapp/.next/server/app/api/autopilot/generate/route.js:18:2954)
+
+> Build error occurred
+Error: Failed to collect page data for /api/autopilot/generate
+    at /home/user/webapp/node_modules/next/dist/build/utils.js:1220:15
+    at process.processTicksAndRejections (node:internal/process/task_queues:95:5) {
+  type: 'Error'
+}

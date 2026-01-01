@@ -1,0 +1,99 @@
+export const dynamic = 'force-dynamic'
+
+import { NextRequest, NextResponse } from 'next/server'
+import { prisma } from '@/lib/prisma'
+import { hash } from 'bcryptjs'
+
+export const dynamic = 'force-dynamic'
+
+export async function POST(req: NextRequest) {
+  try {
+    const body = await req.json()
+    const { name, email, password, companyName, website } = body
+
+    // Validate required fields
+    if (!name || !email || !password || !companyName) {
+      return NextResponse.json(
+        { error: 'Missing required fields' },
+        { status: 400 }
+      )
+    }
+
+    // Check if user already exists
+    const existingUser = await prisma.user.findUnique({
+      where: { email },
+    })
+
+    if (existingUser) {
+      return NextResponse.json(
+        { error: 'User with this email already exists' },
+        { status: 409 }
+      )
+    }
+
+    // Create tenant (company)
+    const tenant = await prisma.tenant.create({
+      data: {
+        name: companyName,
+        website: website || null,
+      },
+    })
+
+    // Hash password
+    // TODO: In production, use proper password hashing
+    // const passwordHash = await hash(password, 12)
+    
+    // For demo, we'll skip password hashing
+    // In production, add a passwordHash field to the User model
+
+    // Create user with TENANT_ADMIN role
+    const user = await prisma.user.create({
+      data: {
+        email,
+        name,
+        role: 'TENANT_ADMIN',
+        tenantId: tenant.id,
+      },
+      include: {
+        tenant: true,
+      },
+    })
+
+    // Create default AI configuration
+    await prisma.aIConfig.create({
+      data: {
+        tenantId: tenant.id,
+        selectedModel: 'gpt-4-turbo',
+        tonePreference: 'professional',
+        postLength: 'medium',
+        hashtagStrategy: 'moderate',
+        includeEmojis: true,
+        includeCTA: true,
+      },
+    })
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: 'Account created successfully',
+        user: {
+          id: user.id,
+          email: user.email,
+          name: user.name,
+          role: user.role,
+          tenant: {
+            id: tenant.id,
+            name: tenant.name,
+          },
+        },
+      },
+      { status: 201 }
+    )
+  } catch (error: any) {
+    console.error('Registration error:', error)
+    return NextResponse.json(
+      { error: 'Failed to create account. Please try again.' },
+      { status: 500 }
+    )
+  }
+}

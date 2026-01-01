@@ -1,0 +1,601 @@
+<!DOCTYPE html>
+<html lang="ro" data-theme="light">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Documentație Tehnică SaaS Social Media AI Platform</title>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@picocss/pico@1/css/pico.min.css" />
+    <style>
+      body {
+        max-width: 880px;
+        margin: 0 auto;
+        padding: 40px 80px;
+        font-family: 'Arial', sans-serif;
+        color: #000;
+        line-height: 1.5;
+        background-color: #fff;
+      }
+      h1 {
+        text-align: center;
+        margin-bottom: 2em;
+        font-size: 24pt;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      h2 {
+        border-bottom: 1px solid #000;
+        padding-bottom: 5px;
+        margin-top: 2em;
+        margin-bottom: 1em;
+        font-size: 16pt;
+        font-weight: bold;
+      }
+      h3 {
+        margin-top: 1.5em;
+        margin-bottom: 0.8em;
+        font-size: 14pt;
+        font-weight: bold;
+      }
+      h4 {
+        margin-top: 1.2em;
+        margin-bottom: 0.5em;
+        font-size: 12pt;
+        font-weight: bold;
+        text-decoration: underline;
+      }
+      p {
+        margin-bottom: 1em;
+        text-align: justify;
+      }
+      ul,
+      ol {
+        margin-bottom: 1em;
+        padding-left: 2em;
+      }
+      li {
+        margin-bottom: 0.5em;
+      }
+      table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 1.5em;
+        font-size: 11pt;
+      }
+      th,
+      td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: left;
+      }
+      th {
+        background-color: #f0f0f0;
+        font-weight: bold;
+      }
+      code {
+        font-family: 'Courier New', monospace;
+        background-color: #f5f5f5;
+        padding: 2px 4px;
+        border-radius: 3px;
+        font-size: 0.9em;
+      }
+      pre {
+        background-color: #f9f9f9;
+        padding: 15px;
+        border: 1px solid #ddd;
+        border-radius: 4px;
+        overflow-x: hidden; /* Prevent scrollbar */
+        white-space: pre-wrap; /* Wrap long lines */
+        font-size: 10pt;
+        margin-bottom: 1.5em;
+      }
+      .header-info {
+        text-align: center;
+        margin-bottom: 40px;
+        font-size: 12pt;
+      }
+      .img-container {
+        text-align: center;
+        margin: 20px 0;
+      }
+      img {
+        max-width: 100%;
+        height: auto;
+        border: 1px solid #ccc;
+      }
+      .note {
+        font-style: italic;
+        color: #555;
+        border-left: 3px solid #ccc;
+        padding-left: 10px;
+        margin: 10px 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="header-info">
+      <p><strong>DOCUMENTAȚIE TEHNICĂ</strong></p>
+      <p>Proiect: SaaS Social Media AI Platform</p>
+      <p>Versiune: 2.1 (Include Brand Asset Management & Deployment Railway)</p>
+      <p>Data: 01 Ianuarie 2026</p>
+    </div>
+
+    <h1>SaaS Social Media AI Platform<br />Documentație Tehnică Completă</h1>
+
+    <h2>1. Rezumat Executiv</h2>
+    <p>
+      Această documentație descrie arhitectura și specificațiile tehnice pentru dezvoltarea unei platforme SaaS
+      (Software as a Service) multi-tenant dedicată automatizării prezenței pe rețelele de socializare. Scopul
+      platformei este de a permite companiilor să genereze, planifice și publice conținut de înaltă calitate cu o
+      intervenție umană minimă.
+    </p>
+    <p>
+      Punctul central al MVP-ului (Minimum Viable Product) este integrarea robustă cu <strong>LinkedIn</strong>,
+      extinzându-se ulterior către alte platforme. Diferențiatorul cheie față de soluțiile existente pe piață este
+      motorul de <strong>Inteligență Artificială cu Auto-Learning</strong>, care învață din feedback-ul și editările
+      utilizatorilor pentru a deveni progresiv mai precis în replicarea vocii brandului.
+    </p>
+
+    <h2>2. Arhitectură Multi-Tenant</h2>
+    <p>
+      Arhitectura este fundamental construită pentru a deservi multiple organizații (tenants) dintr-o singură instanță a
+      aplicației, asigurând securitatea și izolarea datelor.
+    </p>
+    <ul>
+      <li>
+        <strong>Izolare Logică a Datelor:</strong> Fiecare înregistrare din baza de date va fi asociată unui
+        <code>tenant_id</code>, garantând că datele unei companii nu sunt niciodată accesibile alteia.
+      </li>
+      <li>
+        <strong>Sistem de Roluri (RBAC):</strong>
+        <ul>
+          <li>
+            <strong>Super Admin (Platform Owner):</strong> Gestionează toți tenants, setările globale AI și
+            abonamentele.
+          </li>
+          <li>
+            <strong>Tenant Admin:</strong> Gestionează setările companiei, integrările sociale și utilizatorii din
+            organizație.
+          </li>
+          <li>
+            <strong>Editor:</strong> Poate genera, edita și programa postări, dar necesită aprobare pentru publicare
+            (configurabil).
+          </li>
+          <li><strong>Viewer:</strong> Are drepturi de vizualizare (read-only) asupra calendarului și rapoartelor.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Sistem de Invitații:</strong> Adminii de tenant pot invita utilizatori prin email, aceștia fiind
+        asociați automat organizației respective.
+      </li>
+    </ul>
+
+    <h2>3. Stack Tehnologic Principal</h2>
+    <h3>Frontend</h3>
+    <ul>
+      <li><strong>Next.js 14 + React + TypeScript:</strong> Framework modern pentru performanță optimă și SEO.</li>
+      <li><strong>TailwindCSS:</strong> Pentru un design "mobile-first" rapid și consistent.</li>
+      <li>
+        <strong>PWA Capabilities:</strong> Aplicația va fi optimizată pentru a funcționa ca o aplicație nativă pe
+        dispozitive mobile.
+      </li>
+    </ul>
+
+    <h3>Backend</h3>
+    <ul>
+      <li>
+        <strong>NestJS (Node.js) sau FastAPI (Python):</strong> Arhitectură modulară și scalabilă. FastAPI este preferat
+        pentru microserviciile de AI.
+      </li>
+      <li>
+        <strong>PostgreSQL:</strong> Bază de date relațională cu Row-Level Security (RLS) pentru a forța izolarea
+        datelor multi-tenant la nivel de DB.
+      </li>
+      <li><strong>Redis:</strong> Pentru caching și gestionarea cozilor de procesare.</li>
+      <li><strong>AWS S3:</strong> Stocare sigură și scalabilă pentru imagini și videoclipuri.</li>
+      <li>
+        <strong>Bull/BullMQ:</strong> Sistem de cozi pentru procesarea asincronă a sarcinilor grele (generare video,
+        analiză bulk).
+      </li>
+    </ul>
+
+    <h3>AI/ML Stack</h3>
+    <ul>
+      <li><strong>GPT-4 Turbo:</strong> Motorul principal pentru conținut creativ și strategic.</li>
+      <li>
+        <strong>Claude 3 Opus:</strong> Utilizat pentru conținut long-form și menținerea consistenței vocii brandului
+        ("Brand Voice").
+      </li>
+      <li><strong>Gemini Pro:</strong> Alternativă cost-eficientă pentru analize rapide.</li>
+      <li>
+        <strong>GPT-4 Vision & Claude 3 Vision:</strong> Analiza imaginilor și videoclipurilor încărcate de utilizatori.
+      </li>
+      <li><strong>DALL-E 3:</strong> Generare imagini.</li>
+      <li><strong>RunwayML / Pika Labs:</strong> Generare video.</li>
+      <li><strong>ElevenLabs:</strong> Sinteză vocală pentru conținut video.</li>
+    </ul>
+
+    <h3>Learning Engine</h3>
+    <ul>
+      <li><strong>TensorFlow / PyTorch:</strong> Framework-uri pentru antrenarea rețelelor neuronale personalizate.</li>
+      <li><strong>Pinecone / Weaviate:</strong> Baze de date vectoriale pentru memoria pe termen lung a AI-ului.</li>
+      <li>
+        <strong>Fine-tuning:</strong> Capacități de ajustare fină a modelelor GPT-4 pe baza seturilor de date specifice
+        clientului.
+      </li>
+    </ul>
+
+    <h2>4. Funcționalități Principale</h2>
+
+    <h4>4.1 Integrare LinkedIn (MVP)</h4>
+    <p>
+      Funcționalitatea core a MVP-ului. Include autentificare sigură prin OAuth 2.0, programarea postărilor, publicarea
+      automată și urmărirea metricilor de engagement (likes, comments, shares, CTR).
+    </p>
+
+    <h4>4.2 Website Analysis Engine</h4>
+    <p>La onboarding, AI-ul analizează automat site-ul clientului pentru a extrage:</p>
+    <ul>
+      <li>Informații despre companie, misiune și valori.</li>
+      <li>Elemente vizuale: Logo, paletă de culori, fonturi.</li>
+      <li>Date structurate (JSON-LD) pentru înțelegerea serviciilor/produselor.</li>
+      <li>OCR pe imagini pentru a extrage text din bannere existente.</li>
+    </ul>
+
+    <h4>4.3 Brand Intelligence Dashboard</h4>
+    <p>Un panou de comandă strategic care oferă:</p>
+    <ul>
+      <li>Analiza competitorilor (monitorizare activitate, frecvență).</li>
+      <li>Identificarea subiectelor trending în industrie.</li>
+      <li>Predicția orelor optime de postare bazată pe date istorice.</li>
+      <li>Analiza "gap-urilor" de conținut (ce lipseste din strategia curentă).</li>
+    </ul>
+
+    <h4>4.4 Configurare AI Avansată</h4>
+    <p>Permite personalizarea profundă a comportamentului AI:</p>
+    <ul>
+      <li>Selecția modelului preferat (ex: GPT-4 pentru creativitate, Claude pentru rigoare).</li>
+      <li>Încărcarea manualului de brand sau completarea unui chestionar inteligent.</li>
+      <li>Definirea tonului (Profesional, Casual, Tehnic etc.) și a strategiei de hashtag-uri.</li>
+    </ul>
+
+    <h4>4.5 Content Personalization</h4>
+    <p>AI-ul se adaptează specificului companiei prin:</p>
+    <ul>
+      <li>Definirea a 3-4 "Customer Personas" (audiențe țintă).</li>
+      <li>Integrarea punctelor de durere (pain points) ale clienților în conținut.</li>
+      <li>Utilizarea poveștilor de succes și a testimonialelor existente.</li>
+      <li>Respectarea regulilor de conformitate (pentru industrii reglementate precum FinTech sau Pharma).</li>
+    </ul>
+
+    <h4>4.6 Smart Content Suggestions Engine</h4>
+    <p>Motor proactiv de sugestii care generează idei bazate pe:</p>
+    <ul>
+      <li>Știri din industrie.</li>
+      <li>Aniversări și momente cheie ale companiei.</li>
+      <li>Conținut educațional derivat din descrierea serviciilor.</li>
+      <li>Template-uri pentru studii de caz ("Customer Success Stories").</li>
+    </ul>
+
+    <h4>4.7 Web Scraping & RSS Integration</h4>
+    <p>Monitorizare continuă a surselor externe:</p>
+    <ul>
+      <li>Feed-uri RSS relevante pentru industrie.</li>
+      <li>Website-urile competitorilor pentru benchmarking.</li>
+      <li>Alerte Google pentru cuvinte cheie specifice.</li>
+    </ul>
+
+    <h4>4.8 Bulk Upload & AI Analysis</h4>
+    <p>Flux de lucru eficient pentru volume mari de conținut:</p>
+    <ul>
+      <li>Încărcare multiplă (imagini/video).</li>
+      <li>Procesare asincronă în fundal.</li>
+      <li>AI-ul analizează fiecare fișier media și generează textul aferent.</li>
+      <li>Notificare prin email la finalizarea procesării.</li>
+    </ul>
+
+    <h4>4.9 Auto-Pilot Mode (100% Automation)</h4>
+    <p>Modul complet autonom:</p>
+    <ul>
+      <li>Generare completă (Text + Imagine/Video) fără intervenție inițială.</li>
+      <li>Scoruri de încredere (Confidence Score) pentru fiecare postare.</li>
+      <li>Interfață de revizuire rapidă ("Batch Review").</li>
+      <li>Filtrare inteligentă și mecanisme de "Emergency Stop".</li>
+    </ul>
+
+    <h4>4.10 Multimedia AI Studio</h4>
+    <p>Studio integrat pentru generarea de active vizuale:</p>
+    <ul>
+      <li>Generare imagini cu presetări de stil (Minimalist, Corporate, Cyberpunk etc.).</li>
+      <li>Generare video scurt (15s-60s) cu fundal muzical și voiceover.</li>
+      <li>Verificare automată a conformității cu brandul (culori, logo).</li>
+    </ul>
+
+    <h4>4.11 AI Learning Engine (Machine Learning în Timp Real)</h4>
+    <p>Componenta critică de învățare:</p>
+    <ul>
+      <li>Analiză "Before/After" la fiecare editare a utilizatorului.</li>
+      <li>Recunoașterea tiparelor (ex: "utilizatorul preferă propoziții scurte", "evită jargonul").</li>
+      <li>Ajustarea automată a tonului pentru viitoarele generări.</li>
+      <li>Vizualizarea progresului și a ratelor de succes.</li>
+    </ul>
+
+    <h4>4.12 Smart Review Queue</h4>
+    <p>Coada de așteptare inteligentă pentru aprobări:</p>
+    <ul>
+      <li>Sugestii în timp real în timpul editării.</li>
+      <li>Notificări de învățare ("Editarea ta a îmbunătățit modelul cu 3.2%").</li>
+      <li>Aplicarea învățămintelor în masă ("Batch Learning").</li>
+    </ul>
+
+    <h4>4.13 Content Calendar & Scheduling</h4>
+    <p>Instrument vizual pentru planificare:</p>
+    <ul>
+      <li>Vederi lunare/săptămânale.</li>
+      <li>Statusuri codate pe culori (Draft, Pending Approval, Scheduled, Published).</li>
+      <li>Funcționalitate drag-and-drop pentru reprogramare.</li>
+    </ul>
+
+    <h4>4.14 Brand Asset Management (Logo/Siglă Integration)</h4>
+    <p>
+      Funcționalitate dedicată pentru personalizarea vizuală și menținerea identității corporative în toate postările
+      generate:
+    </p>
+    <ul>
+      <li>
+        <strong>Upload Logo:</strong> Posibilitatea de a încărca sigla companiei în formate de înaltă rezoluție (PNG,
+        SVG) cu suport pentru transparență.
+      </li>
+      <li>
+        <strong>Auto-Positioning:</strong> Opțiuni de poziționare automată a logo-ului pe imaginile generate sau
+        încărcate:
+        <ul>
+          <li>Colț stânga-jos / dreapta-jos (standard).</li>
+          <li>Centrat (pentru watermarks discrete).</li>
+          <li>Colț stânga-sus / dreapta-sus.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Video Watermark:</strong> Integrarea logo-ului ca watermark persistent pe toată durata videoclipurilor
+        generate de AI, cu opțiuni de fade-in/fade-out.
+      </li>
+      <li>
+        <strong>Control Opacitate & Dimensiune:</strong> Slider-e pentru ajustarea transparenței (ex: 50% pentru
+        watermark subtil) și a dimensiunii relative față de imagine (ex: 10% din lățime).
+      </li>
+      <li>
+        <strong>Real-time Preview:</strong> Vizualizare instantanee a modului în care logo-ul se aplică pe diverse
+        tipuri de conținut înainte de generarea finală.
+      </li>
+      <li>
+        <strong>Brand Guidelines Compliance:</strong> AI-ul verifică automat contrastul dintre logo și fundal, sugerând
+        varianta albă sau neagră a logo-ului dacă este necesar pentru vizibilitate optimă.
+      </li>
+    </ul>
+
+    <h2>5. Learning Pipeline Arhitectură</h2>
+    <p>Arhitectura sistemului de învățare este compusă din trei etape distincte:</p>
+    <ol>
+      <li>
+        <strong>Data Collection (Colectare):</strong>
+        <ul>
+          <li>Urmărirea diferențelor (diff algorithms) între textul generat și cel final publicat.</li>
+          <li>Analiza sentimentului modificărilor (pozitive/negative).</li>
+          <li>Metrici de performanță reale din LinkedIn (likes, clicks).</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Processing (Procesare):</strong>
+        <ul>
+          <li>Clustering de preferințe pentru personalizare.</li>
+          <li>Recunoașterea tiparelor folosind embeddings.</li>
+          <li>Fine-tuning continuu al modelului per tenant.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Application (Aplicare):</strong>
+        <ul>
+          <li>Adaptarea conținutului în timp real.</li>
+          <li>Sugestii predictive de text (autocomplete pe stilul brandului).</li>
+          <li>Optimizarea pentru engagement maxim.</li>
+        </ul>
+      </li>
+    </ol>
+
+    <h2>6. Smart Memory System</h2>
+    <p>Schema bazei de date pentru sistemul de memorie și învățare:</p>
+    <pre><code>user_preferences:
+  - tone, style, emoji_usage, caption_length
+  - image_style_preferences
+  - video_duration_preferences
+
+content_performance:
+  - engagement_patterns
+  - optimal_posting_times
+  - best_performing_topics
+
+brand_evolution:
+  - how brand voice changes over time
+  - seasonal adjustments
+  - audience feedback patterns
+
+competitor_intelligence:
+  - what works in their industry
+  - trending hashtags
+  - posting frequency benchmarks</code></pre>
+
+    <h2>7. Securitate & Scalabilitate</h2>
+    <ul>
+      <li>
+        <strong>Securitatea Datelor:</strong> Implementare strictă a Row-Level Security (RLS) în PostgreSQL. Datele sunt
+        criptate atât în repaus (AES-256), cât și în tranzit (TLS 1.3).
+      </li>
+      <li>
+        <strong>Scalabilitate:</strong> Arhitectură bazată pe microservicii, permițând scalarea orizontală a
+        componentelor intensive (generare AI, procesare video).
+      </li>
+      <li>
+        <strong>GDPR:</strong> Conformitate completă pentru utilizatorii din UE, cu opțiuni de ștergere a datelor
+        ("Right to be forgotten").
+      </li>
+      <li>
+        <strong>Rate Limiting:</strong> Gestionarea cotelor API pentru a preveni abuzurile și a controla costurile.
+      </li>
+    </ul>
+
+    <h2>8. Roadmap Implementare (16-20 săptămâni)</h2>
+    <table>
+      <thead>
+        <tr>
+          <th>Faza</th>
+          <th>Durată</th>
+          <th>Obiective Principale</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Faza 1: MVP Core</strong></td>
+          <td>4-5 săptămâni</td>
+          <td>Infrastructură Multi-tenant, LinkedIn OAuth, Generare Text Basic, Flux Manual de Aprobare.</td>
+        </tr>
+        <tr>
+          <td><strong>Faza 2: Intelligence Layer</strong></td>
+          <td>4-5 săptămâni</td>
+          <td>Website Analysis Engine, Brand Dashboard, Setări Personalizare, Integrare RSS.</td>
+        </tr>
+        <tr>
+          <td><strong>Faza 3: Automation</strong></td>
+          <td>4-5 săptămâni</td>
+          <td>Bulk Upload, Generare Multimedia (Foto/Video), Smart Suggestions, Calendar.</td>
+        </tr>
+        <tr>
+          <td><strong>Faza 4: Advanced AI Learning</strong></td>
+          <td>4-5 săptămâni</td>
+          <td>Auto-Pilot Mode, Learning Engine, Smart Review Queue, Optimizare Performanță.</td>
+        </tr>
+      </tbody>
+    </table>
+
+    <h2>9. Beneficii Cheie</h2>
+    <h3>Pentru Utilizatori</h3>
+    <ul>
+      <li><strong>Efort Zero:</strong> Reducerea timpului necesar creării de conținut cu peste 80%.</li>
+      <li><strong>Îmbunătățire Continuă:</strong> AI-ul devine mai bun pe măsură ce este utilizat.</li>
+      <li><strong>Consistență:</strong> Menținerea unei voci de brand uniforme pe toate canalele.</li>
+    </ul>
+
+    <h3>Pentru Business (Platform Owner)</h3>
+    <ul>
+      <li>
+        <strong>Retenție Ridicată (Stickiness):</strong> Utilizatorii investesc în "educarea" AI-ului lor, făcând
+        migrarea dificilă.
+      </li>
+      <li>
+        <strong>Avantaj Competitiv:</strong> Modelul de auto-learning este greu de replicat de competitori generici.
+      </li>
+      <li>
+        <strong>Efecte de Rețea:</strong> Mai multe date agregate duc la un model de bază mai performant pentru toți.
+      </li>
+    </ul>
+
+    <h2>10. Tehnologii pentru Multimedia Generation</h2>
+    <ul>
+      <li><strong>Imagini:</strong> DALL-E 3, Midjourney API, Stable Diffusion.</li>
+      <li><strong>Video:</strong> RunwayML Gen-2, Pika Labs, Synthesia.</li>
+      <li><strong>Audio:</strong> ElevenLabs, Murf.ai.</li>
+      <li>
+        <strong>Brand Consistency:</strong> Modele fine-tuned (LoRA) antrenate pe asset-urile vizuale ale brandului.
+      </li>
+    </ul>
+
+    <h2>11. API Endpoints Principale</h2>
+    <pre><code>POST /api/tenants - Creare tenant nou
+POST /api/auth/linkedin - Autentificare LinkedIn OAuth
+POST /api/content/generate - Generare postare AI
+POST /api/content/bulk-upload - Încărcare media în masă
+POST /api/learning/feedback - Trimitere feedback utilizator
+GET /api/intelligence/suggestions - Obținere idei conținut
+POST /api/autopilot/start - Start auto-generare
+GET /api/calendar/posts - Obținere postări programate</code></pre>
+
+    <h2>12. Considerații de Cost</h2>
+    <ul>
+      <li><strong>Costuri API AI:</strong> Monitorizare strictă a tokenilor pentru GPT-4 și Claude.</li>
+      <li><strong>Stocare:</strong> Costuri S3 pentru media (optimizare prin compresie).</li>
+      <li><strong>Infrastructură:</strong> Scalare dinamică a bazei de date și a workerilor pentru cozi.</li>
+    </ul>
+
+    <h2>13. Metrici de Succes</h2>
+    <ul>
+      <li><strong>Timp până la prima postare:</strong> sub 15 minute.</li>
+      <li><strong>Îmbunătățirea acurateței AI:</strong> +3% pe săptămână.</li>
+      <li><strong>Rata de aprobare a utilizatorului:</strong> > 85%.</li>
+      <li><strong>Viteza de generare:</strong> sub 2 minute per postare completă.</li>
+    </ul>
+
+    <h2>14. Deployment & Infrastructure (Railway + PostgreSQL)</h2>
+    <p>
+      Strategia de deployment este optimizată pentru simplitate, scalabilitate și cost-eficiență, utilizând platforma
+      Railway.
+    </p>
+    <ul>
+      <li>
+        <strong>Railway Hosting Specs:</strong>
+        <ul>
+          <li>Servicii separate pentru Frontend (Next.js) și Backend (NestJS/Python).</li>
+          <li>
+            <strong>Auto-scaling:</strong> Configurare pentru scalare verticală automată (RAM/CPU) în funcție de load-ul
+            generat de procesele AI.
+          </li>
+          <li>
+            <strong>Private Networking:</strong> Comunicare securizată între servicii și baza de date în rețeaua internă
+            Railway, fără expunere publică inutilă.
+          </li>
+        </ul>
+      </li>
+      <li>
+        <strong>Configurare PostgreSQL:</strong>
+        <ul>
+          <li>Utilizarea serviciului managed PostgreSQL oferit de Railway.</li>
+          <li>
+            <strong>Row-Level Security (RLS):</strong> Implementare obligatorie la nivel de schemă DB pentru a garanta
+            izolarea datelor între tenants, chiar și în cazul unor erori de cod în backend.
+          </li>
+          <li>
+            <strong>Extensions:</strong> Activarea extensiei <code>pgvector</code> pentru funcționalitățile de AI Memory
+            și căutare semantică.
+          </li>
+        </ul>
+      </li>
+      <li>
+        <strong>Environment Variables:</strong>
+        <ul>
+          <li>Gestionarea securizată a cheilor API (OpenAI, Anthropic, LinkedIn) prin Railway Secrets.</li>
+          <li>Configurare diferențiată pentru medii (Development, Staging, Production).</li>
+        </ul>
+      </li>
+      <li>
+        <strong>CI/CD Setup:</strong>
+        <ul>
+          <li>Integrare automată cu GitHub Actions.</li>
+          <li>Deploy automat la push pe branch-ul <code>main</code> (Production) și <code>develop</code> (Staging).</li>
+          <li>Rulare teste automate (Unit & E2E) înainte de deploy.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Backup & Recovery:</strong>
+        <ul>
+          <li>Backup-uri automate zilnice ale bazei de date PostgreSQL cu retenție de 7 zile.</li>
+          <li>Point-in-time recovery activat pentru recuperare în caz de incidente critice.</li>
+        </ul>
+      </li>
+      <li>
+        <strong>Cost Estimations (Railway):</strong>
+        <ul>
+          <li>Planul Pro (~$5/lună) + costuri de utilizare resurse.</li>
+          <li>Estimare inițială MVP: ~$20-30/lună (bază de date + compute).</li>
+          <li>Avantajul modelului "Pay-as-you-grow" elimină costurile fixe mari de servere dedicate.</li>
+        </ul>
+      </li>
+    </ul>
+  </body>
+</html>
