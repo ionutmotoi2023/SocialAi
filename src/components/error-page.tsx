@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import type { ReactNode } from 'react'
 
 type ErrorPageProps = {
   code: string
@@ -6,15 +7,19 @@ type ErrorPageProps = {
   message: string
   href?: string
   ctaLabel?: string
+  actions?: ReactNode
 }
 
 export function ErrorPage({
   code,
   title,
   message,
-  href = '/',
+  href,
   ctaLabel = 'Back to home',
+  actions,
 }: ErrorPageProps) {
+  const showDefaultCta = !actions && href
+
   return (
     <main className="flex min-h-screen flex-col items-center justify-center bg-slate-950 px-6 py-16 text-center text-slate-100">
       <div className="mx-auto w-full max-w-md space-y-6">
@@ -30,13 +35,16 @@ export function ErrorPage({
         <p className="text-base leading-relaxed text-slate-300">
           {message}
         </p>
-        <div className="pt-4">
-          <Link
-            href={href}
-            className="inline-flex items-center justify-center rounded-md bg-blue-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
-          >
-            {ctaLabel}
-          </Link>
+        <div className="flex flex-col items-center gap-3 pt-4 sm:flex-row sm:justify-center">
+          {actions}
+          {showDefaultCta && (
+            <Link
+              href={href}
+              className="inline-flex items-center justify-center rounded-md bg-blue-500 px-6 py-2 text-sm font-semibold text-white shadow-lg shadow-blue-500/30 transition-colors hover:bg-blue-400 focus:outline-none focus-visible:ring-2 focus-visible:ring-blue-500 focus-visible:ring-offset-2 focus-visible:ring-offset-slate-950"
+            >
+              {ctaLabel}
+            </Link>
+          )}
         </div>
       </div>
     </main>
