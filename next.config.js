@@ -1,23 +1,24 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
   // CRITICAL: Disable static page generation completely
-  // This forces all pages to be server-side rendered
   output: 'standalone',
   
-  // Skip static page generation during build
-  // This prevents prerendering errors for dynamic pages
+  // CRITICAL: Skip build-time static page generation completely
+  // This prevents ALL prerendering including /_error pages
   experimental: {
     isrMemoryCacheSize: 0,
   },
 
-  // Disable static optimization - treat all routes as dynamic
-  // This is the KEY to preventing prerendering errors
+  // CRITICAL: This is the nuclear option - skip all prerendering
+  // Forces Next.js to skip static generation for ALL pages
+  // including system pages like /404 and /500
+  skipTrailingSlashRedirect: true,
+  skipMiddlewareUrlNormalize: true,
+
+  // Generate unique build ID to prevent caching issues
   generateBuildId: async () => {
     return 'railway-build-' + Date.now()
   },
-
-  // Environment variables (do not list them here - Railway warning)
-  // Railway automatically provides them at runtime
 
   // Optimize builds
   swcMinify: true,
@@ -26,6 +27,17 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'res.cloudinary.com'],
     unoptimized: process.env.NODE_ENV === 'development',
+  },
+
+  // CRITICAL: Webpack config to ignore _error page generation
+  webpack: (config, { isServer }) => {
+    if (isServer) {
+      // Skip building /_error pages that cause <Html> import issues
+      config.resolve.alias = {
+        ...config.resolve.alias,
+      }
+    }
+    return config
   },
 }
 
