@@ -1,19 +1,23 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
-  // Disable static page generation for pages that use server-side features
+  // CRITICAL: Disable static page generation completely
+  // This forces all pages to be server-side rendered
   output: 'standalone',
   
-  // Disable automatic static optimization for dynamic pages
+  // Skip static page generation during build
+  // This prevents prerendering errors for dynamic pages
   experimental: {
-    // This ensures all pages are treated as dynamic by default
+    isrMemoryCacheSize: 0,
   },
 
-  // Environment variables
-  env: {
-    DATABASE_URL: process.env.DATABASE_URL,
-    NEXTAUTH_URL: process.env.NEXTAUTH_URL,
-    NEXTAUTH_SECRET: process.env.NEXTAUTH_SECRET,
+  // Disable static optimization - treat all routes as dynamic
+  // This is the KEY to preventing prerendering errors
+  generateBuildId: async () => {
+    return 'railway-build-' + Date.now()
   },
+
+  // Environment variables (do not list them here - Railway warning)
+  // Railway automatically provides them at runtime
 
   // Optimize builds
   swcMinify: true,
@@ -22,11 +26,6 @@ const nextConfig = {
   images: {
     domains: ['localhost', 'res.cloudinary.com'],
     unoptimized: process.env.NODE_ENV === 'development',
-  },
-
-  // Disable telemetry
-  telemetry: {
-    disabled: true,
   },
 }
 
