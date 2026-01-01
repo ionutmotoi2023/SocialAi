@@ -1,5 +1,6 @@
 export const dynamic = 'force-dynamic'
 
+
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
@@ -7,7 +8,6 @@ import { writeFile, mkdir } from 'fs/promises'
 import { join } from 'path'
 import { existsSync } from 'fs'
 
-export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {

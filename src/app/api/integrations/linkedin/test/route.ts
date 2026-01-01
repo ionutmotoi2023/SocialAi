@@ -5,7 +5,6 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { LinkedInClient } from '@/lib/linkedin/client'
 
-export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {

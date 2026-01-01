@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/brand/assets - List all brand assets for tenant
-export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

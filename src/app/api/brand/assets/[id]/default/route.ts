@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // PUT /api/brand/assets/[id]/default - Set asset as default
-export const dynamic = 'force-dynamic'
 
 export async function PUT(
   request: NextRequest,

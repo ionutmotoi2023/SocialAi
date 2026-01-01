@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { generateContent } from '@/lib/ai/openai'
 import { prisma } from '@/lib/prisma'
 
-export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {

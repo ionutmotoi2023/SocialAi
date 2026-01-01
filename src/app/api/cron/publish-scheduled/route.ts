@@ -7,7 +7,6 @@ import { publishToLinkedIn } from '@/lib/linkedin/client'
 // This API route will be called by Vercel Cron every 15 minutes
 // Or can be triggered manually for testing
 
-export const dynamic = 'force-dynamic'
 
 export async function GET(request: NextRequest) {
   try {

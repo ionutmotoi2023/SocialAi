@@ -7,7 +7,6 @@ import { prisma } from '@/lib/prisma'
 import { generateContent } from '@/lib/ai/openai'
 
 // POST /api/autopilot/generate - Bulk generate posts
-export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {

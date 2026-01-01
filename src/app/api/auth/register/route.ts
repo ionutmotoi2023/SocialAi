@@ -4,7 +4,6 @@ import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
 
-export const dynamic = 'force-dynamic'
 
 export async function POST(req: NextRequest) {
   try {

@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // POST /api/team/invite - Send team invitation
-export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   try {

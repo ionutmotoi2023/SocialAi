@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET LinkedIn integration status
-export const dynamic = 'force-dynamic'
 
 export async function GET(req: NextRequest) {
   try {
