@@ -50,26 +50,6 @@ const nextConfig = {
     // Build safety flag
     NEXT_BUILD_SKIP_ENV_VALIDATION: 'true',
   },
-
-module.exports = nextConfig
-
-  // Experimental - disable strict env checking during build
-  experimental: {
-    // Allow builds without all env vars - Railway safe mode
-    // Server Actions are available by default now, removed experimental.serverActions
-  },
-
-  // Build configuration - mai tolerant pentru Railway
-  typescript: {
-    // Ignore TypeScript errors during build (doar pentru development)
-    ignoreBuildErrors: process.env.NODE_ENV === 'development',
-  },
-
-  // ESLint configuration - mai tolerant
-  eslint: {
-    // Ignore ESLint errors during build (doar pentru development)  
-    ignoreDuringBuilds: process.env.NODE_ENV === 'development',
-  },
 }
 
 module.exports = nextConfig

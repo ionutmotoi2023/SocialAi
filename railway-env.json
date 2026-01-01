@@ -1,0 +1,14 @@
+{
+  "NEXTAUTH_URL": "https://socialai-production.up.railway.app",
+  "NEXTAUTH_SECRET": "7a251bba7f7897d34aeef867127fffee1d244237387b665e34c8379ff4d74688",
+  "OPENAI_API_KEY": "sk-dummy-key-for-build-only-replace-with-real",
+  "DATABASE_URL": "file:./dev.db",
+  "JWT_SECRET": "f34118ee1deac8247b9224ce08a79005ac4ac423bb5a55edcbf1314a9fd96c23",
+  "SMTP_HOST": "smtp.gmail.com",
+  "SMTP_PORT": "587",
+  "SMTP_USER": "your-email@gmail.com",
+  "SMTP_PASS": "your-app-password",
+  "STRIPE_SECRET_KEY": "sk_test_dummy-replace-with-stripe",
+  "WEBHOOK_SECRET": "whsec_dummy-replace-with-real",
+  "NEXT_BUILD_SKIP_ENV_VALIDATION": "true"
+}
