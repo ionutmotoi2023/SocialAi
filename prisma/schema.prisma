@@ -397,6 +397,7 @@ enum InvoiceStatus {
 // Invoices for billing history
 model Invoice {
   id             String @id @default(cuid())
+  tenantId       String // Add tenantId for direct relationship
   subscriptionId String
 
   // Invoice details
@@ -426,8 +427,10 @@ model Invoice {
   updatedAt DateTime @updatedAt
 
   // Relations
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
   @@index([subscriptionId])
+  @@index([tenantId])
   @@map("invoices")
 }
