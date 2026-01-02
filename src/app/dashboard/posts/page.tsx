@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Calendar, CheckCircle, Clock, Plus, Filter, ThumbsUp, ThumbsDown } from 'lucide-react'
+import { FileText, Calendar, CheckCircle, Clock, Plus, Filter, ThumbsUp, ThumbsDown, Send, Edit } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
 
@@ -288,7 +288,7 @@ export default function PostsPage() {
                         </div>
                       )}
                       
-                      {/* ✅ NEW: Approve/Reject buttons for PENDING_APPROVAL posts */}
+                      {/* ✅ Approve/Reject buttons for PENDING_APPROVAL posts */}
                       {post.status === 'PENDING_APPROVAL' && (
                         <div className="mt-4 flex flex-col sm:flex-row gap-2 border-t pt-4">
                           <Button
@@ -310,6 +310,24 @@ export default function PostsPage() {
                           >
                             <ThumbsDown className="h-4 w-4 mr-2" />
                             Reject
+                          </Button>
+                        </div>
+                      )}
+
+                      {/* ✅ NEW: Edit/Publish buttons for DRAFT and APPROVED posts */}
+                      {(post.status === 'DRAFT' || post.status === 'APPROVED') && (
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 border-t pt-4">
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            className="flex-1"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              router.push(`/dashboard/posts/${post.id}`)
+                            }}
+                          >
+                            <Edit className="h-4 w-4 mr-2" />
+                            Edit & Publish
                           </Button>
                         </div>
                       )}

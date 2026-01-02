@@ -100,18 +100,96 @@ export class LinkedInClient {
     }
   }
 
-  // Share post with image to LinkedIn
-  async shareImagePost(text: string, imageUrl: string): Promise<LinkedInShareResponse> {
+  // Register image upload with LinkedIn and get asset URN
+  private async registerImageUpload(imageUrl: string): Promise<{ uploadUrl: string; asset: string }> {
     try {
       const profile = await this.getProfile()
       const authorUrn = `urn:li:person:${profile.id}`
 
-      // Note: LinkedIn requires images to be registered first
-      // This is a simplified version - in production, you need to:
-      // 1. Register the upload
-      // 2. Upload the image binary
-      // 3. Create the share with the registered image URN
+      // Step 1: Register upload
+      const registerData = {
+        registerUploadRequest: {
+          recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
+          owner: authorUrn,
+          serviceRelationships: [
+            {
+              relationshipType: 'OWNER',
+              identifier: 'urn:li:userGeneratedContent',
+            },
+          ],
+        },
+      }
 
+      const registerResponse = await fetch(
+        'https://api.linkedin.com/v2/assets?action=registerUpload',
+        {
+          method: 'POST',
+          headers: {
+            Authorization: `Bearer ${this.accessToken}`,
+            'Content-Type': 'application/json',
+            'LinkedIn-Version': '202401',
+          },
+          body: JSON.stringify(registerData),
+        }
+      )
+
+      if (!registerResponse.ok) {
+        const errorData = await registerResponse.json()
+        throw new Error(`LinkedIn register upload error: ${JSON.stringify(errorData)}`)
+      }
+
+      const registerResult = await registerResponse.json()
+      const uploadUrl = registerResult.value.uploadMechanism['com.linkedin.digitalmedia.uploading.MediaUploadHttpRequest'].uploadUrl
+      const asset = registerResult.value.asset
+
+      console.log('✅ LinkedIn image registered:', { asset, hasUploadUrl: !!uploadUrl })
+
+      // Step 2: Download image from URL
+      const imageResponse = await fetch(imageUrl)
+      if (!imageResponse.ok) {
+        throw new Error(`Failed to download image from ${imageUrl}`)
+      }
+      const imageBuffer = await imageResponse.arrayBuffer()
+
+      console.log('✅ Image downloaded:', { size: imageBuffer.byteLength, url: imageUrl })
+
+      // Step 3: Upload image binary to LinkedIn
+      const uploadResponse = await fetch(uploadUrl, {
+        method: 'PUT',
+        headers: {
+          Authorization: `Bearer ${this.accessToken}`,
+          'Content-Type': 'application/octet-stream',
+        },
+        body: imageBuffer,
+      })
+
+      if (!uploadResponse.ok) {
+        throw new Error(`LinkedIn image upload error: ${uploadResponse.statusText}`)
+      }
+
+      console.log('✅ Image uploaded to LinkedIn successfully')
+
+      return { uploadUrl, asset }
+    } catch (error) {
+      console.error('LinkedIn image registration/upload error:', error)
+      throw error
+    }
+  }
+
+  // Share post with image to LinkedIn
+  async shareImagePost(text: string, imageUrl: string): Promise<LinkedInShareResponse> {
+    try {
+      console.log('📸 LinkedIn Image Post - Starting:', { textLength: text.length, imageUrl })
+
+      const profile = await this.getProfile()
+      const authorUrn = `urn:li:person:${profile.id}`
+
+      // Register and upload image to LinkedIn
+      const { asset } = await this.registerImageUpload(imageUrl)
+
+      console.log('📤 Creating LinkedIn post with image asset:', asset)
+
+      // Create share with registered image asset
       const shareData = {
         author: authorUrn,
         lifecycleState: 'PUBLISHED',
@@ -127,9 +205,9 @@ export class LinkedInClient {
                 description: {
                   text: 'Image',
                 },
-                media: imageUrl, // This needs to be a registered LinkedIn asset URN
+                media: asset, // Use the registered asset URN
                 title: {
-                  text: 'Image',
+                  text: 'Shared Image',
                 },
               },
             ],
@@ -145,7 +223,7 @@ export class LinkedInClient {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
-          'LinkedIn-Version': '202401', // Use latest API version
+          'LinkedIn-Version': '202401',
         },
         body: JSON.stringify(shareData),
       })
@@ -156,6 +234,8 @@ export class LinkedInClient {
       }
 
       const data = await response.json()
+
+      console.log('✅ LinkedIn image post created successfully:', data.id)
 
       return {
         id: data.id,

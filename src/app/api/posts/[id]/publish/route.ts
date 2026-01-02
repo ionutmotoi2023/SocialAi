@@ -82,10 +82,11 @@ export async function POST(
     let linkedInResponse
     
     if (post.mediaUrls && post.mediaUrls.length > 0) {
-      // For now, publish text only
-      // Full image support requires LinkedIn image upload flow
-      linkedInResponse = await linkedInClient.shareTextPost(post.content)
+      console.log('📷 Post has images:', post.mediaUrls.length)
+      // Use first image for now (LinkedIn API requires separate handling for multiple images)
+      linkedInResponse = await linkedInClient.shareImagePost(post.content, post.mediaUrls[0])
     } else {
+      console.log('📝 Text-only post')
       linkedInResponse = await linkedInClient.shareTextPost(post.content)
     }
 
