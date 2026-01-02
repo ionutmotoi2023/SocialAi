@@ -3,6 +3,7 @@
 import { useSession, signOut } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { useState } from 'react'
 import { 
   Bot, 
@@ -99,8 +100,14 @@ export function DashboardSidebar() {
         </Button>
         
         <Link href="/dashboard" className="flex items-center space-x-2">
-          <Bot className="h-6 w-6 text-blue-600" />
-          <span className="font-bold text-sm">Social AI</span>
+          <Image 
+            src="/logo.png" 
+            alt="AI MINDLOOP" 
+            width={32} 
+            height={32}
+            className="rounded-lg"
+          />
+          <span className="font-bold text-sm">AI MINDLOOP</span>
         </Link>
 
         <Button
@@ -132,11 +139,17 @@ export function DashboardSidebar() {
       `}>
       {/* Logo - Hidden on mobile (shown in top bar instead) */}
       <div className="hidden lg:flex p-6 border-b border-gray-200 items-center justify-between">
-        <Link href="/dashboard" className="flex items-center space-x-2">
-          <Bot className="h-8 w-8 text-blue-600" />
+        <Link href="/dashboard" className="flex items-center space-x-3">
+          <Image 
+            src="/logo.png" 
+            alt="AI MINDLOOP SRL" 
+            width={48} 
+            height={48}
+            className="rounded-lg"
+          />
           <div>
-            <div className="font-bold text-lg">Social Media AI</div>
-            <div className="text-xs text-gray-500">AI MINDLOOP</div>
+            <div className="font-bold text-lg">AI MINDLOOP SRL</div>
+            <div className="text-xs text-gray-500">Social Media AI</div>
           </div>
         </Link>
         <Button

@@ -5,6 +5,7 @@ export const dynamic = 'force-dynamic'
 import { useState } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
@@ -83,10 +84,16 @@ export default function RegisterPage() {
       <div className="w-full max-w-md">
         {/* Logo */}
         <div className="flex items-center justify-center mb-8">
-          <Bot className="h-12 w-12 text-blue-600 mr-3" />
+          <Image 
+            src="/logo.png" 
+            alt="AI MINDLOOP SRL" 
+            width={64} 
+            height={64}
+            className="rounded-lg mr-3"
+          />
           <div>
-            <h1 className="text-2xl font-bold">Social Media AI</h1>
-            <p className="text-sm text-gray-600">by AI MINDLOOP SRL</p>
+            <h1 className="text-2xl font-bold">AI MINDLOOP SRL</h1>
+            <p className="text-sm text-gray-600">Social Media AI</p>
           </div>
         </div>
 

@@ -3,6 +3,7 @@
 export const dynamic = 'force-dynamic'
 
 import Link from 'next/link'
+import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
@@ -47,9 +48,15 @@ export default function HomePage() {
       {/* Navigation */}
       <nav className="border-b bg-white/80 backdrop-blur-sm">
         <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-2">
-            <Bot className="h-8 w-8 text-blue-600" />
-            <span className="text-xl font-bold">Social Media AI SaaS</span>
+          <div className="flex items-center space-x-3">
+            <Image 
+              src="/logo.png" 
+              alt="AI MINDLOOP SRL" 
+              width={40} 
+              height={40}
+              className="rounded-lg"
+            />
+            <span className="text-xl font-bold">AI MINDLOOP SRL</span>
           </div>
           <div className="flex items-center space-x-4">
             <Link href="/login">
@@ -149,9 +156,15 @@ export default function HomePage() {
       <footer className="bg-gray-900 text-white">
         <div className="container mx-auto px-4 py-8">
           <div className="flex flex-col md:flex-row justify-between items-center">
-            <div className="flex items-center space-x-2 mb-4 md:mb-0">
-              <Bot className="h-6 w-6" />
-              <span className="font-semibold">Social Media AI SaaS</span>
+            <div className="flex items-center space-x-3 mb-4 md:mb-0">
+              <Image 
+                src="/logo.png" 
+                alt="AI MINDLOOP SRL" 
+                width={32} 
+                height={32}
+                className="rounded-lg"
+              />
+              <span className="font-semibold">AI MINDLOOP SRL</span>
             </div>
             <div className="flex gap-6 mb-4 md:mb-0">
               <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
