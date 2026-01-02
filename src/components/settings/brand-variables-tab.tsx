@@ -7,7 +7,7 @@ import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
 import { Textarea } from '@/components/ui/textarea'
 import { useToast } from '@/hooks/use-toast'
-import { Save, Sparkles, Info, RefreshCw } from 'lucide-react'
+import { Save, Sparkles, Info, RefreshCw, AlertTriangle, CheckCircle2, ExternalLink } from 'lucide-react'
 import { Alert, AlertDescription } from '@/components/ui/alert'
 
 interface BrandVariables {
@@ -27,9 +27,15 @@ export default function BrandVariablesTab() {
   const [saving, setSaving] = useState(false)
   const [autoExtracting, setAutoExtracting] = useState(false)
   const [variables, setVariables] = useState<BrandVariables>({})
+  const [brandDataStatus, setBrandDataStatus] = useState<{
+    hasData: boolean
+    sectionsCount: number
+    lastUpdated?: string
+  }>({ hasData: false, sectionsCount: 0 })
 
   useEffect(() => {
     fetchBrandVariables()
+    checkBrandDataStatus()
   }, [])
 
   const fetchBrandVariables = async () => {
@@ -52,6 +58,22 @@ export default function BrandVariablesTab() {
       console.error('Failed to fetch brand variables:', error)
     } finally {
       setLoading(false)
+    }
+  }
+
+  const checkBrandDataStatus = async () => {
+    try {
+      const response = await fetch('/api/brand/scrape')
+      if (response.ok) {
+        const data = await response.json()
+        setBrandDataStatus({
+          hasData: data.total > 0,
+          sectionsCount: data.total,
+          lastUpdated: data.total > 0 ? 'Recently' : undefined
+        })
+      }
+    } catch (error) {
+      console.error('Failed to check brand data status:', error)
     }
   }
 
@@ -84,6 +106,15 @@ export default function BrandVariablesTab() {
   }
 
   const autoExtractFromWebsite = async () => {
+    if (!brandDataStatus.hasData) {
+      toast({
+        title: 'No brand data found',
+        description: 'Please scrape your website first in Brand Training tab',
+        variant: 'destructive',
+      })
+      return
+    }
+
     setAutoExtracting(true)
     try {
       const response = await fetch('/api/brand/extract-variables', {
@@ -98,15 +129,16 @@ export default function BrandVariablesTab() {
         }))
         toast({
           title: 'Variables extracted',
-          description: 'Brand variables have been automatically extracted from your website',
+          description: `Extracted ${Object.keys(data.extractedVariables).length} variables from your brand data`,
         })
       } else {
-        throw new Error('Failed to extract')
+        const error = await response.json()
+        throw new Error(error.error || 'Failed to extract')
       }
-    } catch (error) {
+    } catch (error: any) {
       toast({
         title: 'Extraction failed',
-        description: 'Make sure you have scraped your website in Brand Training tab first',
+        description: error.message || 'Failed to extract brand variables',
         variant: 'destructive',
       })
     } finally {
@@ -137,11 +169,12 @@ export default function BrandVariablesTab() {
         </div>
         <Button
           onClick={autoExtractFromWebsite}
-          disabled={autoExtracting}
+          disabled={autoExtracting || !brandDataStatus.hasData}
           variant="outline"
+          className={!brandDataStatus.hasData ? 'opacity-50 cursor-not-allowed' : ''}
         >
           <RefreshCw className={`h-4 w-4 mr-2 ${autoExtracting ? 'animate-spin' : ''}`} />
-          Auto-Extract from Website
+          {autoExtracting ? 'Extracting...' : 'Auto-Extract from Website'}
         </Button>
       </div>
 
@@ -153,6 +186,47 @@ export default function BrandVariablesTab() {
           Fill in as many as possible for more personalized content.
         </AlertDescription>
       </Alert>
+
+      {/* Brand Data Status Card */}
+      {!brandDataStatus.hasData ? (
+        <Alert className="border-yellow-500 bg-yellow-50">
+          <AlertTriangle className="h-5 w-5 text-yellow-600" />
+          <AlertDescription className="ml-2">
+            <p className="font-semibold text-yellow-900 mb-2">
+              ⚠️ No Brand Training Data Found
+            </p>
+            <p className="text-yellow-800 mb-3">
+              Auto-Extract needs data from your website. Please complete these steps first:
+            </p>
+            <ol className="list-decimal list-inside space-y-1 text-yellow-800 mb-3">
+              <li>Go to <strong>Settings → Brand Training</strong> tab</li>
+              <li>Enter your website URL (e.g., https://yourcompany.com)</li>
+              <li>Click "Scrape Website" and wait for completion</li>
+              <li>Return here and click "Auto-Extract from Website"</li>
+            </ol>
+            <a 
+              href="/dashboard/settings?tab=brand"
+              className="inline-flex items-center text-yellow-900 font-semibold hover:underline"
+            >
+              Go to Brand Training Tab
+              <ExternalLink className="h-4 w-4 ml-1" />
+            </a>
+          </AlertDescription>
+        </Alert>
+      ) : (
+        <Alert className="border-green-500 bg-green-50">
+          <CheckCircle2 className="h-5 w-5 text-green-600" />
+          <AlertDescription className="ml-2">
+            <p className="font-semibold text-green-900 mb-1">
+              ✅ Brand Training Data Available
+            </p>
+            <p className="text-green-800">
+              Found <strong>{brandDataStatus.sectionsCount} sections</strong> from your website.
+              Click "Auto-Extract from Website" to automatically fill in brand variables.
+            </p>
+          </AlertDescription>
+        </Alert>
+      )}
 
       {/* Form */}
       <Card>
