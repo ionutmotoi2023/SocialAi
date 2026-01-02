@@ -22,13 +22,12 @@ export class LinkedInClient {
     this.tenantId = tenantId
   }
 
-  // Get LinkedIn profile information
+  // Get LinkedIn profile information (OpenID Connect UserInfo endpoint)
   async getProfile(): Promise<LinkedInProfile> {
     try {
-      const response = await fetch('https://api.linkedin.com/v2/me', {
+      const response = await fetch('https://api.linkedin.com/v2/userinfo', {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
-          'X-Restli-Protocol-Version': '2.0.0',
         },
       })
 
@@ -38,12 +37,13 @@ export class LinkedInClient {
 
       const data = await response.json()
 
+      // OpenID Connect response format
       return {
-        id: data.id,
-        firstName: data.localizedFirstName || data.firstName?.localized?.en_US || '',
-        lastName: data.localizedLastName || data.lastName?.localized?.en_US || '',
-        profilePicture: data.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
-        vanityName: data.vanityName,
+        id: data.sub, // OpenID Connect subject (LinkedIn member ID)
+        firstName: data.given_name || data.name?.split(' ')[0] || '',
+        lastName: data.family_name || data.name?.split(' ').slice(1).join(' ') || '',
+        profilePicture: data.picture,
+        vanityName: data.vanityName || '',
       }
     } catch (error) {
       console.error('LinkedIn profile fetch error:', error)
@@ -78,7 +78,7 @@ export class LinkedInClient {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
-          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': '202401', // Use latest API version
         },
         body: JSON.stringify(shareData),
       })
@@ -145,7 +145,7 @@ export class LinkedInClient {
         headers: {
           Authorization: `Bearer ${this.accessToken}`,
           'Content-Type': 'application/json',
-          'X-Restli-Protocol-Version': '2.0.0',
+          'LinkedIn-Version': '202401', // Use latest API version
         },
         body: JSON.stringify(shareData),
       })
