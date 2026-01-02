@@ -57,3 +57,13 @@
     @apply bg-background text-foreground;
   }
 }
+
+/* Safe area for mobile devices (iPhone notch, etc.) */
+@layer utilities {
+  .safe-area-bottom {
+    padding-bottom: env(safe-area-inset-bottom);
+  }
+  .safe-area-top {
+    padding-top: env(safe-area-inset-top);
+  }
+}
