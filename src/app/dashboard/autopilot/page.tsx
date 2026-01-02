@@ -163,34 +163,61 @@ export default function AutoPilotPage() {
   return (
     <div className="container mx-auto py-8 space-y-8">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold flex items-center gap-2">
-            <Zap className="h-8 w-8 text-yellow-500" />
-            Auto-Pilot Mode
-          </h1>
-          <p className="text-muted-foreground mt-2">
-            Let AI automatically generate and schedule your content
-          </p>
+      <div className="flex flex-col gap-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="text-3xl font-bold flex items-center gap-2">
+              <Zap className="h-8 w-8 text-yellow-500" />
+              Auto-Pilot Mode
+            </h1>
+            <p className="text-muted-foreground mt-2">
+              Let AI automatically generate and schedule your content
+            </p>
+          </div>
+
+          <Button
+            size="lg"
+            onClick={toggleAutoPilot}
+            className={config.enabled ? 'bg-green-500 hover:bg-green-600' : ''}
+          >
+            {config.enabled ? (
+              <>
+                <Pause className="h-5 w-5 mr-2" />
+                Pause Auto-Pilot
+              </>
+            ) : (
+              <>
+                <Play className="h-5 w-5 mr-2" />
+                Enable Auto-Pilot
+              </>
+            )}
+          </Button>
         </div>
 
-        <Button
-          size="lg"
-          onClick={toggleAutoPilot}
-          className={config.enabled ? 'bg-green-500 hover:bg-green-600' : ''}
-        >
-          {config.enabled ? (
-            <>
-              <Pause className="h-5 w-5 mr-2" />
-              Pause Auto-Pilot
-            </>
-          ) : (
-            <>
-              <Play className="h-5 w-5 mr-2" />
-              Enable Auto-Pilot
-            </>
-          )}
-        </Button>
+        {/* Quick Actions - Moved to top for better visibility */}
+        <div className="flex flex-col sm:flex-row gap-3">
+          <Button 
+            size="lg" 
+            variant="secondary"
+            onClick={generateBulk}
+            disabled={generating}
+            className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg"
+          >
+            <Sparkles className="h-5 w-5 mr-2" />
+            {generating ? 'Generating...' : 'Generate Posts Now'}
+          </Button>
+
+          <Button 
+            size="lg" 
+            onClick={saveConfig} 
+            disabled={saving} 
+            className="flex-1"
+            variant="outline"
+          >
+            <SettingsIcon className="h-5 w-5 mr-2" />
+            {saving ? 'Saving...' : 'Save Configuration'}
+          </Button>
+        </div>
       </div>
 
       {/* Status Card */}
@@ -378,25 +405,6 @@ export default function AutoPilotPage() {
           </div>
         </CardContent>
       </Card>
-
-      {/* Actions */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <Button size="lg" onClick={saveConfig} disabled={saving} className="flex-1">
-          <SettingsIcon className="h-5 w-5 mr-2" />
-          {saving ? 'Saving...' : 'Save Configuration'}
-        </Button>
-
-        <Button 
-          size="lg" 
-          variant="secondary"
-          onClick={generateBulk}
-          disabled={generating}
-          className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
-        >
-          <Sparkles className="h-5 w-5 mr-2" />
-          {generating ? 'Generating...' : 'Generate Now'}
-        </Button>
-      </div>
 
       {/* Info Card */}
       <Card className="bg-blue-50/50 border-blue-200">
