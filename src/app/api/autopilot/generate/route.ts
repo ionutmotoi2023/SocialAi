@@ -153,6 +153,7 @@ export async function POST(request: NextRequest) {
         const result = await generateContent({
           prompt: prompts[i],
           brandVoice: aiConfig.brandVoice || undefined,
+          additionalInstructions: aiConfig.additionalInstructions || undefined, // NEW: Pass custom instructions
           brandVariables, // NEW: Pass brand variables
           tone: aiConfig.tonePreference as 'professional' | 'casual' | 'enthusiastic' | 'technical',
           includeHashtags: true,

@@ -76,6 +76,7 @@ export async function PUT(req: NextRequest) {
       hashtagStrategy,
       includeEmojis,
       includeCTA,
+      additionalInstructions,
     } = body
 
     const config = await prisma.aIConfig.upsert({
@@ -88,6 +89,7 @@ export async function PUT(req: NextRequest) {
         hashtagStrategy,
         includeEmojis,
         includeCTA,
+        additionalInstructions,
       },
       create: {
         tenantId: session.user.tenantId,
@@ -98,6 +100,7 @@ export async function PUT(req: NextRequest) {
         hashtagStrategy: hashtagStrategy || 'moderate',
         includeEmojis: includeEmojis ?? true,
         includeCTA: includeCTA ?? true,
+        additionalInstructions,
       },
     })
 

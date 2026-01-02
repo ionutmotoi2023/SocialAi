@@ -32,6 +32,7 @@ export default function SettingsPage() {
     hashtagStrategy: 'moderate',
     includeEmojis: true,
     includeCTA: true,
+    additionalInstructions: '',
   })
 
   useEffect(() => {
@@ -350,6 +351,22 @@ export default function SettingsPage() {
                           <div className="w-11 h-6 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
                         </label>
                       </div>
+                    </div>
+
+                    <div className="pt-4 border-t">
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Additional Instructions for AI
+                        <span className="ml-2 text-xs font-normal text-gray-500">(Optional)</span>
+                      </label>
+                      <textarea
+                        className="w-full min-h-[120px] p-3 border rounded-lg resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="Add any extra context, specific guidelines, or custom instructions for AI to follow when generating content...&#10;&#10;Example:&#10;- Always mention our sustainability commitment&#10;- Use data-driven examples when possible&#10;- Avoid industry jargon and keep it simple&#10;- Focus on customer success stories"
+                        value={config.additionalInstructions}
+                        onChange={(e) => setConfig({ ...config, additionalInstructions: e.target.value })}
+                      />
+                      <p className="mt-2 text-xs text-gray-500">
+                        💡 This field is added to every AI prompt. Use it to provide context, rules, or preferences that AI should always consider when creating content for your brand.
+                      </p>
                     </div>
                   </CardContent>
                 </Card>

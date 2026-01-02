@@ -87,6 +87,9 @@ model AIConfig {
   teamSize       String? // e.g., "50-100 employees"
   headquarters   String? // e.g., "San Francisco, CA"
 
+  // Additional AI Instructions - Custom context for AI to consider
+  additionalInstructions String? @db.Text // Free-form text for custom AI instructions
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

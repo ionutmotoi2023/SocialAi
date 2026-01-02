@@ -99,6 +99,7 @@ export async function POST(req: NextRequest) {
       prompt,
       mediaUrls,
       brandVoice: aiConfig.brandVoice || undefined,
+      additionalInstructions: aiConfig.additionalInstructions || undefined, // NEW: Pass custom instructions
       brandContext, // NEW: Pass brand context
       brandVariables, // NEW: Pass brand variables for dynamic replacement
       tone: aiConfig.tonePreference as any,
