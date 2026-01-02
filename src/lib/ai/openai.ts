@@ -63,13 +63,12 @@ export async function generateContent(
     // Check if there are media URLs (images/videos)
     const hasMedia = params.mediaUrls && params.mediaUrls.length > 0
 
-    // Generate content with GPT-4
+    // Generate content with GPT-4o (multimodal - handles text, vision, audio)
     const openai = getOpenAIClient()
     
-    // If media is present, use GPT-4 Vision (gpt-4o is the latest model with vision)
     let response
     if (hasMedia) {
-      // Build message content with images
+      // Build message content with images for multimodal input
       const userContent: any[] = [
         {
           type: 'text',
@@ -89,7 +88,7 @@ export async function generateContent(
       })
 
       response = await openai.chat.completions.create({
-        model: 'gpt-4o', // gpt-4o has vision capabilities and is more recent than gpt-4-vision-preview
+        model: 'gpt-4o', // gpt-4o is multimodal (text + vision + audio)
         messages: [
           {
             role: 'user',
@@ -100,9 +99,9 @@ export async function generateContent(
         max_tokens: getMaxTokens(params.postLength),
       })
     } else {
-      // No media - use standard text model
+      // No media - text only, but still use gpt-4o (it handles text too!)
       response = await openai.chat.completions.create({
-        model: 'gpt-4-turbo-preview',
+        model: 'gpt-4o', // Same model for everything!
         messages: [
           {
             role: 'system',
@@ -131,7 +130,7 @@ export async function generateContent(
       text: generatedText,
       hashtags,
       confidence,
-      model: hasMedia ? 'gpt-4o' : 'gpt-4-turbo',
+      model: 'gpt-4o', // Always gpt-4o (multimodal model)
       generationTime,
       suggestions: generateSuggestions(generatedText),
     }
