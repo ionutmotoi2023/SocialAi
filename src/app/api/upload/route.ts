@@ -1,13 +1,9 @@
 export const dynamic = 'force-dynamic'
 
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
-import { writeFile, mkdir } from 'fs/promises'
-import { join } from 'path'
-import { existsSync } from 'fs'
-
+import { uploadToCloudinary } from '@/lib/storage/cloudinary'
 
 export async function POST(req: NextRequest) {
   try {
@@ -38,47 +34,45 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Validate file size (5MB max)
-    if (file.size > 5 * 1024 * 1024) {
+    // Validate file size (10MB max for Cloudinary free tier)
+    if (file.size > 10 * 1024 * 1024) {
       return NextResponse.json(
-        { error: 'File size must be less than 5MB' },
+        { error: 'File size must be less than 10MB' },
         { status: 400 }
       )
     }
 
-    // Generate unique filename
+    // Convert file to buffer
     const bytes = await file.arrayBuffer()
     const buffer = Buffer.from(bytes)
-    
-    const timestamp = Date.now()
-    const randomString = Math.random().toString(36).substring(2, 15)
-    const extension = file.name.split('.').pop()
-    const filename = `${timestamp}-${randomString}.${extension}`
 
-    // Create uploads directory if it doesn't exist
-    const uploadsDir = join(process.cwd(), 'public', 'uploads')
-    if (!existsSync(uploadsDir)) {
-      await mkdir(uploadsDir, { recursive: true })
-    }
-
-    // Save file
-    const filepath = join(uploadsDir, filename)
-    await writeFile(filepath, buffer)
-
-    // Return public URL
-    const url = `/uploads/${filename}`
+    // Upload to Cloudinary
+    const result = await uploadToCloudinary(buffer, file.name)
 
     return NextResponse.json({
       success: true,
-      url,
-      filename,
-      size: file.size,
+      url: result.secureUrl, // Use secure HTTPS URL
+      publicId: result.publicId,
+      filename: file.name,
+      size: result.bytes,
       type: file.type,
+      width: result.width,
+      height: result.height,
+      format: result.format,
     })
   } catch (error: any) {
     console.error('Upload error:', error)
+    
+    // Provide more specific error messages
+    if (error.message.includes('Cloudinary credentials')) {
+      return NextResponse.json(
+        { error: 'Image upload service not configured. Please contact support.' },
+        { status: 503 }
+      )
+    }
+
     return NextResponse.json(
-      { error: 'Failed to upload file' },
+      { error: error.message || 'Failed to upload file' },
       { status: 500 }
     )
   }
