@@ -9,10 +9,12 @@ import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
 import { RSSSourceCard } from '@/components/posts/rss-source-card'
-import { ArrowLeft, Home, Save, Trash2, Calendar, Send, Loader2, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Home, Save, Trash2, Calendar, Send, Loader2, Image as ImageIcon, Linkedin } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ImageUpload } from '@/components/upload/image-upload'
+import { Label } from '@/components/ui/label'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 
 interface Post {
   id: string
@@ -44,6 +46,19 @@ interface Post {
   }
 }
 
+interface LinkedInIntegration {
+  id: string
+  linkedinId: string
+  profileName?: string
+  profileImage?: string
+  profileType: 'PERSONAL' | 'COMPANY_PAGE'
+  organizationName?: string
+  organizationId?: string
+  isActive: boolean
+  expiresAt?: string
+  createdAt: string
+}
+
 export default function PostDetailPage({ params }: { params: { id: string } }) {
   const router = useRouter()
   const { toast } = useToast()
@@ -58,10 +73,32 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   const [scheduledTime, setScheduledTime] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
   const [isScheduling, setIsScheduling] = useState(false)
+  
+  // LinkedIn integrations
+  const [linkedInIntegrations, setLinkedInIntegrations] = useState<LinkedInIntegration[]>([])
+  const [selectedIntegrationId, setSelectedIntegrationId] = useState<string>('')
 
   useEffect(() => {
     fetchPost()
+    fetchLinkedInIntegrations()
   }, [params.id])
+
+  const fetchLinkedInIntegrations = async () => {
+    try {
+      const response = await fetch('/api/integrations/linkedin')
+      if (response.ok) {
+        const data = await response.json()
+        const integrations = data.integrations || []
+        setLinkedInIntegrations(integrations)
+        // Auto-select first active integration
+        if (integrations.length > 0 && !selectedIntegrationId) {
+          setSelectedIntegrationId(integrations[0].id)
+        }
+      }
+    } catch (error) {
+      console.error('Failed to fetch LinkedIn integrations:', error)
+    }
+  }
 
   const fetchPost = async () => {
     try {
@@ -137,7 +174,21 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   }
 
   const handlePublishNow = async () => {
-    if (!confirm('Publish this post to LinkedIn now?')) {
+    if (!selectedIntegrationId) {
+      toast({
+        title: 'No destination selected',
+        description: 'Please select a LinkedIn profile or company page to publish to',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    const selectedIntegration = linkedInIntegrations.find(i => i.id === selectedIntegrationId)
+    const destinationName = selectedIntegration?.profileType === 'COMPANY_PAGE' 
+      ? selectedIntegration.organizationName 
+      : selectedIntegration?.profileName
+
+    if (!confirm(`Publish this post to ${destinationName} now?`)) {
       return
     }
 
@@ -147,9 +198,15 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
       // First, save any changes
       await handleSave()
 
-      // Then publish
+      // Then publish with selected integration
       const response = await fetch(`/api/posts/${params.id}/publish`, {
         method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          linkedInIntegrationId: selectedIntegrationId,
+        }),
       })
 
       if (!response.ok) {
@@ -159,7 +216,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
 
       toast({
         title: 'Success',
-        description: 'Post published to LinkedIn successfully',
+        description: `Post published to ${destinationName} successfully`,
       })
 
       // Refresh post data
@@ -355,9 +412,44 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                     )}
                   </Button>
                   
+                  {/* LinkedIn Destination Selector */}
+                  {linkedInIntegrations.length > 0 && (
+                    <Select
+                      value={selectedIntegrationId}
+                      onValueChange={setSelectedIntegrationId}
+                    >
+                      <SelectTrigger className="w-[240px]">
+                        <SelectValue placeholder="Select destination..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {linkedInIntegrations.map((integration) => (
+                          <SelectItem key={integration.id} value={integration.id}>
+                            <div className="flex items-center gap-2">
+                              <Linkedin className="h-4 w-4" />
+                              <span>
+                                {integration.profileType === 'COMPANY_PAGE'
+                                  ? integration.organizationName
+                                  : integration.profileName}
+                              </span>
+                              <Badge 
+                                className={`text-xs ${
+                                  integration.profileType === 'COMPANY_PAGE'
+                                    ? 'bg-purple-500'
+                                    : 'bg-blue-500'
+                                }`}
+                              >
+                                {integration.profileType === 'COMPANY_PAGE' ? 'Company' : 'Personal'}
+                              </Badge>
+                            </div>
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  
                   <Button
                     onClick={handlePublishNow}
-                    disabled={isPublishing || isSaving}
+                    disabled={isPublishing || isSaving || linkedInIntegrations.length === 0}
                     className="bg-green-600 hover:bg-green-700"
                   >
                     {isPublishing ? (
