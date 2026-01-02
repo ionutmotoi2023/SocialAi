@@ -1,0 +1,17 @@
+Force rebuild - LinkedIn OAuth logging added
+Timestamp: 2025-01-02T11:30:00Z
+Commit: 64ae5cb
+
+This file is created to trigger Railway rebuild after adding comprehensive logging to LinkedIn OAuth flow.
+
+Changes in this deployment:
+- Added logging to /api/integrations/linkedin/auth
+- Added logging to /api/integrations/linkedin/callback
+- Created LINKEDIN_OAUTH_EXPLAINED.md documentation
+
+Expected in logs after deployment:
+🔗 LinkedIn Auth - Session Info
+🔗 LinkedIn Auth - Config
+✅ LinkedIn Auth - Redirecting to
+🔙 LinkedIn Callback - Received
+✅ LinkedIn Callback - Successfully connected
