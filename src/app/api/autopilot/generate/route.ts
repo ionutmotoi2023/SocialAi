@@ -40,6 +40,7 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < Math.min(count, prompts.length); i++) {
       try {
+        const startTime = Date.now() // Start timer
         const result = await generateContent({
           prompt: prompts[i],
           brandVoice: aiConfig.brandVoice || undefined,
@@ -47,6 +48,7 @@ export async function POST(request: NextRequest) {
           includeHashtags: true,
           includeCTA: aiConfig.includeCTA
         })
+        const generationTimeSeconds = Math.round((Date.now() - startTime) / 1000) // Convert to seconds
 
         // Only create if confidence is above threshold
         if (result.confidence >= confidenceThreshold) {
@@ -60,7 +62,7 @@ export async function POST(request: NextRequest) {
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
               originalPrompt: prompts[i],
-              generationTime: Date.now()
+              generationTime: generationTimeSeconds // Save in seconds, not milliseconds
             }
           })
 
@@ -77,7 +79,7 @@ export async function POST(request: NextRequest) {
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
               originalPrompt: prompts[i],
-              generationTime: Date.now()
+              generationTime: generationTimeSeconds // Save in seconds, not milliseconds
             }
           })
 

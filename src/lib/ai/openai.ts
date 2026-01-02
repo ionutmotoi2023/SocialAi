@@ -47,7 +47,7 @@ export interface GeneratedContent {
   hashtags: string[]
   confidence: number
   model: string
-  generationTime: number
+  generationTime: number // in seconds
   suggestions?: string[]
 }
 
@@ -122,7 +122,8 @@ export async function generateContent(
     }
 
     const generatedText = response.choices[0]?.message?.content || ''
-    const generationTime = Date.now() - startTime
+    const generationTimeMs = Date.now() - startTime
+    const generationTime = Math.round(generationTimeMs / 1000) // Convert to seconds
 
     // Extract hashtags from generated content
     const hashtags = extractHashtags(generatedText)

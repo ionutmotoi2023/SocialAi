@@ -6,7 +6,6 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
 // GET /api/autopilot/config - Get Auto-Pilot configuration
-
 export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -14,15 +13,27 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // For now, return default config (can be stored in DB later)
-    // You could add an AutoPilotConfig model to Prisma
-    const config = {
-      enabled: false,
-      postsPerWeek: 5,
-      confidenceThreshold: 0.8,
-      autoSchedule: true,
-      preferredTimes: ['09:00', '12:00', '17:00'],
-      topics: []
+    const tenantId = session.user.tenantId
+
+    // Get config from database or return default
+    let config = await prisma.autoPilotConfig.findUnique({
+      where: { tenantId }
+    })
+
+    // If no config exists, return defaults
+    if (!config) {
+      config = {
+        id: '',
+        tenantId,
+        enabled: false,
+        postsPerWeek: 5,
+        confidenceThreshold: 0.8,
+        autoSchedule: true,
+        preferredTimes: ['09:00', '12:00', '17:00'],
+        topics: [],
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
     }
 
     return NextResponse.json({ config })
@@ -51,11 +62,40 @@ export async function POST(request: NextRequest) {
       )
     }
 
-    const config = await request.json()
+    const tenantId = session.user.tenantId
+    const body = await request.json()
 
-    // TODO: Save config to database
-    // For now, just return success
-    // You can add a table: autopilot_configs with tenantId, config JSON
+    // Validate and extract config fields
+    const {
+      enabled,
+      postsPerWeek,
+      confidenceThreshold,
+      autoSchedule,
+      preferredTimes,
+      topics
+    } = body
+
+    // Upsert config in database
+    const config = await prisma.autoPilotConfig.upsert({
+      where: { tenantId },
+      update: {
+        enabled: enabled ?? false,
+        postsPerWeek: postsPerWeek ?? 5,
+        confidenceThreshold: confidenceThreshold ?? 0.8,
+        autoSchedule: autoSchedule ?? true,
+        preferredTimes: preferredTimes ?? ['09:00', '12:00', '17:00'],
+        topics: topics ?? []
+      },
+      create: {
+        tenantId,
+        enabled: enabled ?? false,
+        postsPerWeek: postsPerWeek ?? 5,
+        confidenceThreshold: confidenceThreshold ?? 0.8,
+        autoSchedule: autoSchedule ?? true,
+        preferredTimes: preferredTimes ?? ['09:00', '12:00', '17:00'],
+        topics: topics ?? []
+      }
+    })
 
     return NextResponse.json({ 
       config,

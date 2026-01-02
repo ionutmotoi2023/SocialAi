@@ -25,6 +25,7 @@ model Tenant {
   // Relations
   users           User[]
   aiConfigs       AIConfig[]
+  autoPilotConfigs AutoPilotConfig[]
   brandAssets     BrandAsset[]
   posts           Post[]
   contentSources  ContentSource[]
@@ -79,6 +80,25 @@ model AIConfig {
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("ai_configs")
+}
+
+// Auto-Pilot configuration per tenant
+model AutoPilotConfig {
+  id                    String   @id @default(cuid())
+  tenantId              String   @unique
+  enabled               Boolean  @default(false)
+  postsPerWeek          Int      @default(5)
+  confidenceThreshold   Float    @default(0.8)  // 0.0 to 1.0
+  autoSchedule          Boolean  @default(true)
+  preferredTimes        String[] // ["09:00", "12:00", "17:00"]
+  topics                String[] // ["AI", "Technology", "Business"]
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("autopilot_configs")
 }
 
 // Brand assets (logos, watermarks)
@@ -168,7 +188,7 @@ model Post {
   aiModel           String?
   aiConfidence      Float?     // 0.0 to 1.0
   originalPrompt    String?
-  generationTime    Int?       // milliseconds
+  generationTime    Int?       // SECONDS (not milliseconds)
   
   // User feedback for learning
   userApproved      Boolean?
