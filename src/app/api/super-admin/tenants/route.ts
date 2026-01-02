@@ -108,7 +108,7 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { name, domain, website, industry, description } = body
+    const { name, domain, website, industry, description, plan, adminUser } = body
 
     if (!name) {
       return NextResponse.json({ 
@@ -141,9 +141,48 @@ export async function POST(request: NextRequest) {
       },
     })
 
+    // Create subscription for the new tenant
+    const subscriptionPlan = plan || 'FREE'
+    const planLimits = {
+      FREE: { posts: 5, users: 1, aiCredits: 10, amount: 0 },
+      STARTER: { posts: 50, users: 3, aiCredits: 500, amount: 2900 },
+      PROFESSIONAL: { posts: 200, users: 10, aiCredits: 2000, amount: 9900 },
+      ENTERPRISE: { posts: 9999, users: 9999, aiCredits: 9999, amount: 29900 },
+    }
+
+    const limits = planLimits[subscriptionPlan as keyof typeof planLimits]
+
+    await prisma.subscription.create({
+      data: {
+        tenantId: tenant.id,
+        plan: subscriptionPlan,
+        status: plan === 'FREE' ? 'ACTIVE' : 'TRIAL',
+        trialEndDate: plan !== 'FREE' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
+        nextBillingDate: plan !== 'FREE' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
+        postsLimit: limits.posts,
+        usersLimit: limits.users,
+        aiCreditsLimit: limits.aiCredits,
+        monthlyAmount: limits.amount,
+      },
+    })
+
+    // Create admin user if requested
+    let createdAdmin = null
+    if (adminUser && adminUser.email && adminUser.name) {
+      createdAdmin = await prisma.user.create({
+        data: {
+          email: adminUser.email,
+          name: adminUser.name,
+          role: 'TENANT_ADMIN',
+          tenantId: tenant.id,
+        },
+      })
+    }
+
     return NextResponse.json({ 
       success: true,
       tenant,
+      adminUser: createdAdmin,
       message: 'Tenant created successfully',
     })
   } catch (error: any) {
