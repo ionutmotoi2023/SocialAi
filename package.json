@@ -7,9 +7,9 @@
   "license": "MIT",
   "scripts": {
     "dev": "next dev",
-    "build": "prisma generate && NEXT_BUILD_SKIP_ENV_VALIDATION=1 next build",
-    "build:safe": "prisma generate && NEXT_BUILD_SKIP_ENV_VALIDATION=1 next build",
-    "build:strict": "prisma generate && next build",
+    "build": "prisma generate && prisma db push --accept-data-loss && NEXT_BUILD_SKIP_ENV_VALIDATION=1 next build",
+    "build:safe": "prisma generate && prisma db push --accept-data-loss && NEXT_BUILD_SKIP_ENV_VALIDATION=1 next build",
+    "build:strict": "prisma generate && prisma db push --accept-data-loss && next build",
     "start": "next start",
     "start:safe": "NEXT_BUILD_SKIP_ENV_VALIDATION=1 next start",
     "lint": "next lint",
