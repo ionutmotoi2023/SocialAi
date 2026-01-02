@@ -260,7 +260,7 @@ export default function SuperAdminPage() {
                 className="pl-10"
               />
             </div>
-            <Button>
+            <Button onClick={() => router.push('/dashboard/super-admin/tenants/new')}>
               <Plus className="h-4 w-4 mr-2" />
               New Tenant
             </Button>
