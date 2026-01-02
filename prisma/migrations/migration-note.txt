@@ -1,0 +1,16 @@
+# NOTE: This migration will be applied on Railway during deployment
+# For local development: DATABASE_URL is not required
+# Schema changes will be applied via 'prisma db push' on Railway
+
+Migration: add_subscription_billing
+Date: 2026-01-02
+
+Changes:
+- Add Subscription model
+- Add Invoice model
+- Add SubscriptionPlan enum
+- Add SubscriptionStatus enum
+- Add InvoiceStatus enum
+
+This is a NON-BREAKING change - adds new tables only.
+

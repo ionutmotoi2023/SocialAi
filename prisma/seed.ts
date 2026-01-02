@@ -127,6 +127,33 @@ async function main() {
 
   console.log(`✅ Created ${posts.length} demo posts`)
 
+  // Create subscription for demo tenant (PROFESSIONAL plan with 7-day trial)
+  const subscription = await prisma.subscription.upsert({
+    where: { tenantId: tenant.id },
+    update: {},
+    create: {
+      tenantId: tenant.id,
+      plan: 'PROFESSIONAL',
+      status: 'TRIAL',
+      startDate: new Date(),
+      trialEndDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000), // 7 days trial
+      nextBillingDate: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
+      // PROFESSIONAL plan limits
+      postsLimit: 200,
+      usersLimit: 10,
+      aiCreditsLimit: 2000,
+      // Current usage
+      postsUsed: posts.length, // Count demo posts
+      usersUsed: 2, // admin + editor
+      aiCreditsUsed: 15, // Estimated from demo posts
+      // Pricing
+      monthlyAmount: 9900, // $99.00
+      currency: 'USD',
+    },
+  })
+
+  console.log('✅ Created subscription:', `${subscription.plan} (${subscription.status})`)
+
   console.log('🎉 Database seed completed successfully!')
   console.log('')
   console.log('📧 Demo Login Credentials:')
