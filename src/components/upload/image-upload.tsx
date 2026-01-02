@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button'
 import { useToast } from '@/hooks/use-toast'
 
 interface ImageUploadProps {
-  onUpload: (urls: string[]) => void
+  onUpload: (urls: string[], optimizedUrls?: string[]) => void
   maxFiles?: number
   existingImages?: string[]
 }
@@ -15,6 +15,7 @@ export function ImageUpload({ onUpload, maxFiles = 5, existingImages = [] }: Ima
   const { toast } = useToast()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const [images, setImages] = useState<string[]>(existingImages)
+  const [optimizedImages, setOptimizedImages] = useState<string[]>([])
   const [isUploading, setIsUploading] = useState(false)
   const [previewUrls, setPreviewUrls] = useState<string[]>(existingImages)
 
@@ -40,9 +41,9 @@ export function ImageUpload({ onUpload, maxFiles = 5, existingImages = [] }: Ima
           throw new Error(`${file.name} is not an image`)
         }
 
-        // Validate file size (max 5MB)
-        if (file.size > 5 * 1024 * 1024) {
-          throw new Error(`${file.name} is too large. Max size is 5MB`)
+        // Validate file size (max 10MB to match Cloudinary limit)
+        if (file.size > 10 * 1024 * 1024) {
+          throw new Error(`${file.name} is too large. Max size is 10MB`)
         }
 
         // Create FormData
@@ -61,16 +62,24 @@ export function ImageUpload({ onUpload, maxFiles = 5, existingImages = [] }: Ima
         }
 
         const data = await response.json()
-        return data.url
+        return {
+          url: data.url,              // Original URL for display
+          optimizedUrl: data.optimizedUrl  // Optimized URL for GPT-4
+        }
       })
 
-      const uploadedUrls = await Promise.all(uploadPromises)
+      const uploadedData = await Promise.all(uploadPromises)
+      const uploadedUrls = uploadedData.map(d => d.url)
+      const uploadedOptimizedUrls = uploadedData.map(d => d.optimizedUrl)
+      
       const newImages = [...images, ...uploadedUrls]
+      const newOptimizedImages = [...optimizedImages, ...uploadedOptimizedUrls]
       const newPreviews = [...previewUrls, ...uploadedUrls]
 
       setImages(newImages)
+      setOptimizedImages(newOptimizedImages)
       setPreviewUrls(newPreviews)
-      onUpload(newImages)
+      onUpload(newImages, newOptimizedImages)
 
       toast({
         title: 'Success',
@@ -92,10 +101,12 @@ export function ImageUpload({ onUpload, maxFiles = 5, existingImages = [] }: Ima
 
   const handleRemoveImage = (index: number) => {
     const newImages = images.filter((_, i) => i !== index)
+    const newOptimizedImages = optimizedImages.filter((_, i) => i !== index)
     const newPreviews = previewUrls.filter((_, i) => i !== index)
     setImages(newImages)
+    setOptimizedImages(newOptimizedImages)
     setPreviewUrls(newPreviews)
-    onUpload(newImages)
+    onUpload(newImages, newOptimizedImages)
   }
 
   const handleButtonClick = () => {

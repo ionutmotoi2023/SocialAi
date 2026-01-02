@@ -51,7 +51,8 @@ export async function POST(req: NextRequest) {
 
     return NextResponse.json({
       success: true,
-      url: result.secureUrl, // Use secure HTTPS URL
+      url: result.secureUrl, // URL original pentru UI display
+      optimizedUrl: result.optimizedUrl, // URL optimizat pentru GPT-4 Vision
       publicId: result.publicId,
       filename: file.name,
       size: result.bytes,

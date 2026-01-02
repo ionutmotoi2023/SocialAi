@@ -21,6 +21,7 @@ export default function CreatePostPage() {
   const [isEditing, setIsEditing] = useState(false)
   const [editedContent, setEditedContent] = useState('')
   const [mediaUrls, setMediaUrls] = useState<string[]>([])
+  const [optimizedMediaUrls, setOptimizedMediaUrls] = useState<string[]>([])
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -42,7 +43,7 @@ export default function CreatePostPage() {
         },
         body: JSON.stringify({
           prompt,
-          mediaUrls,
+          mediaUrls: optimizedMediaUrls.length > 0 ? optimizedMediaUrls : mediaUrls, // Use optimized URLs for GPT-4
           includeHashtags: true,
           includeCTA: true,
           saveAsDraft: false,
@@ -150,7 +151,12 @@ export default function CreatePostPage() {
                     Upload Images (Optional)
                   </label>
                   <ImageUpload
-                    onUpload={setMediaUrls}
+                    onUpload={(urls, optimizedUrls) => {
+                      setMediaUrls(urls)
+                      if (optimizedUrls) {
+                        setOptimizedMediaUrls(optimizedUrls)
+                      }
+                    }}
                     maxFiles={5}
                     existingImages={mediaUrls}
                   />
