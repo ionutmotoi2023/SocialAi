@@ -12,7 +12,6 @@ import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Calendar as CalendarIcon, Plus, ChevronLeft, ChevronRight } from 'lucide-react'
 import { ScheduleModal } from '@/components/calendar/schedule-modal'
-import { DashboardSidebar } from '@/components/dashboard/sidebar'
 import 'react-big-calendar/lib/css/react-big-calendar.css'
 import './calendar.css'
 
@@ -160,11 +159,9 @@ export default function CalendarPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <DashboardSidebar />
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <header className="bg-white border-b border-gray-200 px-6 py-4">
+    <>
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4">
           <div className="flex items-center justify-between">
             <div>
               <h1 className="text-2xl font-bold text-gray-900 flex items-center">
@@ -230,7 +227,6 @@ export default function CalendarPage() {
             onScheduled={fetchPosts}
           />
         )}
-      </div>
-    </div>
+    </>
   )
 }

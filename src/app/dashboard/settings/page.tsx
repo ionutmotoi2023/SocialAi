@@ -95,10 +95,9 @@ export default function SettingsPage() {
   }
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Tabs Navigation */}
-        <div className="bg-white border-b border-gray-200">
+    <>
+      {/* Tabs Navigation */}
+      <div className="bg-white border-b border-gray-200">
           <div className="px-6">
             <div className="flex space-x-4">
               <button
@@ -326,7 +325,6 @@ export default function SettingsPage() {
             {activeTab === 'content' && <ContentSourcesTab />}
           </div>
         </main>
-      </div>
-    </div>
+    </>
   )
 }
