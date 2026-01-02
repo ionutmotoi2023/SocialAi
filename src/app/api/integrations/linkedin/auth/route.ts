@@ -47,10 +47,12 @@ export async function GET(req: NextRequest) {
     linkedInAuthUrl.searchParams.append('client_id', clientId)
     linkedInAuthUrl.searchParams.append('redirect_uri', redirectUri)
     linkedInAuthUrl.searchParams.append('state', session.user.tenantId)
-    // Use OpenID Connect scopes (LinkedIn migrated from legacy OAuth 2.0)
-    // openid + profile = equivalent to r_liteprofile
-    // w_member_social = posting permissions
-    linkedInAuthUrl.searchParams.append('scope', 'openid profile w_member_social')
+    // Use OpenID Connect scopes + Organization Admin scope
+    // openid + profile = user profile info
+    // w_member_social = posting permissions for personal profile
+    // r_organization_admin = read organizations & posting permissions for company pages
+    // w_organization_social = posting permissions for company pages (alternative)
+    linkedInAuthUrl.searchParams.append('scope', 'openid profile w_member_social r_organization_admin w_organization_social')
 
     // 🔍 LOG: Final OAuth URL
     console.log('✅ LinkedIn Auth - Redirecting to:', linkedInAuthUrl.toString())
