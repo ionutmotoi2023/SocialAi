@@ -84,11 +84,10 @@ export async function GET(req: NextRequest) {
 
     console.log('🔍 LinkedIn Callback - Fetching profile...')
 
-    // Fetch LinkedIn profile
-    const profileResponse = await fetch('https://api.linkedin.com/v2/me', {
+    // Fetch LinkedIn profile using OpenID Connect UserInfo endpoint
+    const profileResponse = await fetch('https://api.linkedin.com/v2/userinfo', {
       headers: {
         Authorization: `Bearer ${access_token}`,
-        'X-Restli-Protocol-Version': '2.0.0',
       },
     })
 
@@ -106,12 +105,13 @@ export async function GET(req: NextRequest) {
 
     const profileData = await profileResponse.json()
 
-    // 🔍 LOG: Profile data received
+    // 🔍 LOG: Profile data received (OpenID Connect format)
     console.log('✅ LinkedIn Callback - Profile data:', {
-      linkedinId: profileData.id,
-      firstName: profileData.localizedFirstName,
-      lastName: profileData.localizedLastName,
-      hasProfilePicture: !!profileData.profilePicture,
+      linkedinId: profileData.sub,
+      name: profileData.name,
+      givenName: profileData.given_name,
+      familyName: profileData.family_name,
+      picture: profileData.picture,
     })
 
     // Calculate expiration date
@@ -119,11 +119,11 @@ export async function GET(req: NextRequest) {
 
     console.log('💾 LinkedIn Callback - Saving to database...', {
       tenantId,
-      linkedinId: profileData.id,
+      linkedinId: profileData.sub,
       expiresAt: expiresAt.toISOString(),
     })
 
-    // Save or update integration
+    // Save or update integration (OpenID Connect format)
     await prisma.linkedInIntegration.upsert({
       where: { tenantId },
       create: {
@@ -131,18 +131,18 @@ export async function GET(req: NextRequest) {
         accessToken: access_token,
         refreshToken: tokenData.refresh_token || null,
         expiresAt,
-        linkedinId: profileData.id,
-        profileName: `${profileData.localizedFirstName || ''} ${profileData.localizedLastName || ''}`.trim(),
-        profileImage: profileData.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
+        linkedinId: profileData.sub,
+        profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
+        profileImage: profileData.picture,
         isActive: true,
       },
       update: {
         accessToken: access_token,
         refreshToken: tokenData.refresh_token || null,
         expiresAt,
-        linkedinId: profileData.id,
-        profileName: `${profileData.localizedFirstName || ''} ${profileData.localizedLastName || ''}`.trim(),
-        profileImage: profileData.profilePicture?.['displayImage~']?.elements?.[0]?.identifiers?.[0]?.identifier,
+        linkedinId: profileData.sub,
+        profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
+        profileImage: profileData.picture,
         isActive: true,
       },
     })
