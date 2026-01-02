@@ -48,6 +48,22 @@ export async function GET(
             createdAt: 'asc',
           },
         },
+        subscriptions: {
+          select: {
+            id: true,
+            plan: true,
+            status: true,
+            postsLimit: true,
+            usersLimit: true,
+            aiCreditsLimit: true,
+            postsUsed: true,
+            usersUsed: true,
+            aiCreditsUsed: true,
+            monthlyAmount: true,
+            trialEndDate: true,
+            nextBillingDate: true,
+          },
+        },
         aiConfigs: true,
         autoPilotConfigs: true,
         posts: {
@@ -124,7 +140,7 @@ export async function PUT(
     }
 
     const body = await request.json()
-    const { name, domain, website, industry, description, logo } = body
+    const { name, domain, website, industry, description, logo, plan } = body
 
     const tenant = await prisma.tenant.update({
       where: { id: params.id },
@@ -137,6 +153,31 @@ export async function PUT(
         ...(logo !== undefined && { logo }),
       },
     })
+
+    // Update subscription plan if provided
+    if (plan) {
+      const planLimits = {
+        FREE: { posts: 5, users: 1, aiCredits: 10, amount: 0 },
+        STARTER: { posts: 50, users: 3, aiCredits: 500, amount: 2900 },
+        PROFESSIONAL: { posts: 200, users: 10, aiCredits: 2000, amount: 9900 },
+        ENTERPRISE: { posts: 9999, users: 9999, aiCredits: 9999, amount: 29900 },
+      }
+
+      const limits = planLimits[plan as keyof typeof planLimits]
+
+      if (limits) {
+        await prisma.subscription.update({
+          where: { tenantId: params.id },
+          data: {
+            plan: plan,
+            postsLimit: limits.posts,
+            usersLimit: limits.users,
+            aiCreditsLimit: limits.aiCredits,
+            monthlyAmount: limits.amount,
+          },
+        })
+      }
+    }
 
     return NextResponse.json({ 
       success: true,
