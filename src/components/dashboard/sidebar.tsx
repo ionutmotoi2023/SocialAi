@@ -18,7 +18,8 @@ import {
   Menu,
   X,
   Home,
-  Shield
+  Shield,
+  CreditCard
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -79,6 +80,11 @@ export function DashboardSidebar() {
       name: 'Team',
       href: '/dashboard/team',
       icon: Users,
+    },
+    {
+      name: 'Billing',
+      href: '/dashboard/settings/billing',
+      icon: CreditCard,
     },
     {
       name: 'Integrations',
