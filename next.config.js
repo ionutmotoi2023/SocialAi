@@ -22,6 +22,11 @@ const nextConfig = {
     ignoreDuringBuilds: true,
   },
 
+  // Enable instrumentation hook for cron jobs
+  experimental: {
+    instrumentationHook: true,
+  },
+
   // Environment variables with fallbacks - Railway safe mode
   // Elimină secțiunea env - variabilele trebuie să fie în .env sau Railway
   // Next.js va folosi automat variabilele din mediu
