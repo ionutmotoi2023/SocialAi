@@ -228,7 +228,11 @@ export default function SettingsPage() {
                         Workspace Name
                       </label>
                       <Input
-                        value={session?.user.tenant.name || ''}
+                        value={
+                          session?.user.role === 'SUPER_ADMIN'
+                            ? 'Platform Admin'
+                            : session?.user.tenant?.name || 'No Workspace'
+                        }
                         disabled
                         className="bg-gray-50"
                       />
