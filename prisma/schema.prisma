@@ -34,6 +34,7 @@ model Tenant {
   aiLearningData       AILearningData[]
   brandTrainingData    BrandTrainingData[]
   subscriptions        Subscription[]
+  invoices             Invoice[]
 
   @@map("tenants")
 }
