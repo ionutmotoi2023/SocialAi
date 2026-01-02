@@ -1,8 +1,9 @@
 'use client'
 
 import { useSession, signOut } from 'next-auth/react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
+import { useState } from 'react'
 import { 
   Bot, 
   LayoutDashboard, 
@@ -14,7 +15,10 @@ import {
   TrendingUp,
   Zap,
   LogOut,
-  ChevronRight
+  ChevronRight,
+  Menu,
+  X,
+  Home
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -22,6 +26,8 @@ import { Badge } from '@/components/ui/badge'
 export function DashboardSidebar() {
   const { data: session } = useSession()
   const pathname = usePathname()
+  const router = useRouter()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
 
   const navigation = [
     {
@@ -80,10 +86,57 @@ export function DashboardSidebar() {
     return pathname?.startsWith(href)
   }
 
+  const handleNavClick = (href: string) => {
+    setIsMobileMenuOpen(false)
+    router.push(href)
+  }
+
   return (
-    <div className="w-64 bg-white border-r border-gray-200 flex flex-col">
-      {/* Logo */}
-      <div className="p-6 border-b border-gray-200">
+    <>
+      {/* Mobile Top Bar - Only visible on mobile */}
+      <div className="lg:hidden fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 px-4 py-3 flex items-center justify-between">
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
+        >
+          {isMobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
+        </Button>
+        
+        <Link href="/dashboard" className="flex items-center space-x-2">
+          <Bot className="h-6 w-6 text-blue-600" />
+          <span className="font-bold text-sm">Social AI</span>
+        </Link>
+
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push('/dashboard')}
+          title="Home"
+        >
+          <Home className="h-5 w-5" />
+        </Button>
+      </div>
+
+      {/* Mobile Overlay */}
+      {isMobileMenuOpen && (
+        <div 
+          className="lg:hidden fixed inset-0 bg-black bg-opacity-50 z-40"
+          onClick={() => setIsMobileMenuOpen(false)}
+        />
+      )}
+
+      {/* Sidebar */}
+      <div className={`
+        fixed lg:relative
+        inset-y-0 left-0 z-40
+        w-64 bg-white border-r border-gray-200 
+        flex flex-col
+        transform transition-transform duration-300 ease-in-out
+        ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
+      `}>
+      {/* Logo - Hidden on mobile (shown in top bar instead) */}
+      <div className="hidden lg:block p-6 border-b border-gray-200">
         <Link href="/dashboard" className="flex items-center space-x-2">
           <Bot className="h-8 w-8 text-blue-600" />
           <div>
@@ -109,11 +162,11 @@ export function DashboardSidebar() {
           const active = isActive(item.href)
           
           return (
-            <Link
+            <button
               key={item.name}
-              href={item.href}
+              onClick={() => handleNavClick(item.href)}
               className={`
-                flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium transition-colors
+                w-full flex items-center justify-between px-3 py-3 rounded-lg text-sm font-medium transition-colors
                 ${active 
                   ? 'bg-blue-50 text-blue-600' 
                   : 'text-gray-700 hover:bg-gray-50 hover:text-gray-900'
@@ -133,7 +186,7 @@ export function DashboardSidebar() {
                 </Badge>
               )}
               {active && <ChevronRight className="h-4 w-4" />}
-            </Link>
+            </button>
           )
         })}
       </nav>
@@ -162,5 +215,9 @@ export function DashboardSidebar() {
         </Button>
       </div>
     </div>
+
+    {/* Spacer for mobile top bar */}
+    <div className="lg:hidden h-14" />
+  </>
   )
 }
