@@ -8,6 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
+import { RSSSourceCard } from '@/components/posts/rss-source-card'
 import { ArrowLeft, Home, Save, Trash2, Calendar, Send, Loader2, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
@@ -26,10 +27,20 @@ interface Post {
   aiModel?: string
   aiConfidence?: number
   createdAt: string
+  // RSS Source tracking
+  contentSourceId?: string
+  rssItemTitle?: string
+  rssItemUrl?: string
+  rssItemDate?: string
   user: {
     id: string
     name?: string
     email: string
+  }
+  contentSource?: {
+    id: string
+    name: string
+    url: string
   }
 }
 
@@ -480,6 +491,18 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                 </div>
               </CardContent>
             </Card>
+
+            {/* RSS Source Info - NEW */}
+            {post.aiGenerated && (post.contentSourceId || post.rssItemTitle) && (
+              <RSSSourceCard
+                contentSourceId={post.contentSourceId}
+                rssItemTitle={post.rssItemTitle}
+                rssItemUrl={post.rssItemUrl}
+                rssItemDate={post.rssItemDate}
+                sourceName={post.contentSource?.name}
+                sourceUrl={post.contentSource?.url}
+              />
+            )}
 
             {/* AI Metadata */}
             {post.aiGenerated && (

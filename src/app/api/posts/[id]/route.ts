@@ -34,6 +34,13 @@ export async function GET(
             email: true,
           },
         },
+        contentSource: {
+          select: {
+            id: true,
+            name: true,
+            url: true,
+          },
+        },
       },
     })
 

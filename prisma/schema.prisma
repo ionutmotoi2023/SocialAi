@@ -137,6 +137,7 @@ model ContentSource {
   
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  posts  Post[] // Posts inspired by this source
 
   @@map("content_sources")
 }
@@ -196,12 +197,19 @@ model Post {
   userModifications String?    // What user changed
   engagementScore   Float?     // Actual performance
   
+  // RSS Source Tracking (NEW)
+  contentSourceId   String?    // Link to ContentSource that inspired this
+  rssItemTitle      String?    // Original RSS item title
+  rssItemUrl        String?    // Original RSS item URL
+  rssItemDate       DateTime?  // When RSS item was published
+  
   createdAt         DateTime   @default(now())
   updatedAt         DateTime   @updatedAt
   
   // Relations
-  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  user      User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  contentSource ContentSource? @relation(fields: [contentSourceId], references: [id], onDelete: SetNull)
 
   @@map("posts")
 }
@@ -211,12 +219,14 @@ model AILearningData {
   id                String   @id @default(cuid())
   tenantId          String
   postId            String?  // Related post if applicable
-  interactionType   String   // user_edit, approval, rejection, regeneration
+  contentSourceId   String?  // Related content source if RSS inspiration
+  interactionType   String   // user_edit, approval, rejection, regeneration, content_inspiration
   originalContent   String?
   modifiedContent   String?
   userFeedback      String?
   improvementScore  Float?   // How much this improved AI accuracy
   patternDetected   String?  // What pattern was learned
+  rssItemUrl        String?  // URL of RSS item (for content_inspiration)
   createdAt         DateTime @default(now())
   
   // Relations

@@ -93,10 +93,12 @@ export async function POST(request: NextRequest) {
         const saved = await prisma.aILearningData.create({
           data: {
             tenantId: session.user.tenantId,
+            contentSourceId: source.id, // NEW: Link to content source
             interactionType: 'content_inspiration',
             originalContent: contentPreview?.substring(0, 2000),
             patternDetected: `RSS: ${feed.title} - ${item.title}`,
             userFeedback: `Source: ${source.name}`,
+            rssItemUrl: item.link, // NEW: Save RSS item URL
           },
         })
         savedCount.push(saved)

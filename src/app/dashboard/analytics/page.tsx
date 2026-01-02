@@ -6,6 +6,7 @@ import { useState, useEffect } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
+import { AIInsightsSection } from '@/components/analytics/ai-insights-section'
 import { 
   TrendingUp, TrendingDown, Activity, Clock, Target, Zap,
   ThumbsUp, MessageCircle, Share2, Eye
@@ -339,6 +340,9 @@ export default function AnalyticsPage() {
           </div>
         </CardContent>
       </Card>
+
+      {/* AI Learning Insights Section - NEW */}
+      <AIInsightsSection timeRange={timeRange} />
     </div>
   )
 }

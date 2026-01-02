@@ -43,7 +43,7 @@ export async function POST(request: NextRequest) {
         },
       },
       orderBy: { createdAt: 'desc' },
-      take: 5, // Top 5 recent items
+      take: 10, // Top 10 recent items for better selection
     })
 
     // Get brand training data
@@ -81,6 +81,11 @@ export async function POST(request: NextRequest) {
 
     for (let i = 0; i < Math.min(count, prompts.length); i++) {
       try {
+        // Select RSS inspiration for this post (round-robin)
+        const inspirationItem = rssInspiration.length > 0 
+          ? rssInspiration[i % rssInspiration.length]
+          : null
+
         const startTime = Date.now() // Start timer
         const result = await generateContent({
           prompt: prompts[i],
@@ -103,7 +108,12 @@ export async function POST(request: NextRequest) {
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
               originalPrompt: prompts[i],
-              generationTime: generationTimeSeconds // Save in seconds, not milliseconds
+              generationTime: generationTimeSeconds, // Save in seconds, not milliseconds
+              // NEW: RSS Source tracking
+              contentSourceId: inspirationItem?.contentSourceId || null,
+              rssItemTitle: inspirationItem?.patternDetected || null,
+              rssItemUrl: inspirationItem?.rssItemUrl || null,
+              rssItemDate: inspirationItem?.createdAt || null,
             }
           })
 
@@ -120,7 +130,12 @@ export async function POST(request: NextRequest) {
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
               originalPrompt: prompts[i],
-              generationTime: generationTimeSeconds // Save in seconds, not milliseconds
+              generationTime: generationTimeSeconds, // Save in seconds, not milliseconds
+              // NEW: RSS Source tracking
+              contentSourceId: inspirationItem?.contentSourceId || null,
+              rssItemTitle: inspirationItem?.patternDetected || null,
+              rssItemUrl: inspirationItem?.rssItemUrl || null,
+              rssItemDate: inspirationItem?.createdAt || null,
             }
           })
 
