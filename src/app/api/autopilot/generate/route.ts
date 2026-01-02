@@ -30,13 +30,54 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Get recent content inspiration from RSS feeds (last 7 days)
+    const sevenDaysAgo = new Date()
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7)
+
+    const rssInspiration = await prisma.aILearningData.findMany({
+      where: {
+        tenantId: session.user.tenantId,
+        interactionType: 'content_inspiration',
+        createdAt: {
+          gte: sevenDaysAgo,
+        },
+      },
+      orderBy: { createdAt: 'desc' },
+      take: 5, // Top 5 recent items
+    })
+
+    // Get brand training data
+    const brandData = await prisma.brandTrainingData.findMany({
+      where: { tenantId: session.user.tenantId },
+      orderBy: { lastUpdated: 'desc' },
+      take: 3,
+    })
+
+    // Build context for AI
+    let contextPrompt = ''
+    
+    if (rssInspiration.length > 0) {
+      contextPrompt += '\n\nRECENT INDUSTRY NEWS FOR INSPIRATION:\n'
+      rssInspiration.forEach((item) => {
+        contextPrompt += `- ${item.patternDetected}: ${item.originalContent?.substring(0, 150)}...\n`
+      })
+      contextPrompt += '\nUse these as inspiration for trending topics, but create original content.\n'
+    }
+
+    if (brandData.length > 0) {
+      contextPrompt += '\n\nBRAND CONTEXT:\n'
+      brandData.forEach((data) => {
+        contextPrompt += `[${data.category}]: ${data.content.substring(0, 200)}...\n`
+      })
+    }
+
     const created: string[] = []
     const failed: string[] = []
 
     // Generate posts based on topics or generic prompts
     const prompts = topics.length > 0
-      ? topics.map((topic: string) => `Create a professional post about ${topic}`)
-      : Array(count).fill('Create an engaging professional post for LinkedIn')
+      ? topics.map((topic: string) => `Create a professional post about ${topic}${contextPrompt}`)
+      : Array(count).fill(`Create an engaging professional post for LinkedIn${contextPrompt}`)
 
     for (let i = 0; i < Math.min(count, prompts.length); i++) {
       try {
