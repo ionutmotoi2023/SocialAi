@@ -91,6 +91,33 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // Fetch organizations (to detect if user manages a company page)
+    console.log('🔍 LinkedIn Callback - Fetching organizations...')
+    const orgsResponse = await fetch(
+      'https://api.linkedin.com/v2/organizationalEntityAcls?q=roleAssignee&projection=(elements*(organizationalTarget~(localizedName,vanityName)))',
+      {
+        headers: {
+          Authorization: `Bearer ${access_token}`,
+          'LinkedIn-Version': '202401',
+        },
+      }
+    )
+
+    let organizations: any[] = []
+    if (orgsResponse.ok) {
+      const orgsData = await orgsResponse.json()
+      organizations = orgsData.elements || []
+      console.log('✅ LinkedIn Callback - Organizations found:', {
+        count: organizations.length,
+        orgs: organizations.map((org: any) => ({
+          id: org['organizationalTarget~']?.id,
+          name: org['organizationalTarget~']?.localizedName,
+        })),
+      })
+    } else {
+      console.log('⚠️ LinkedIn Callback - Could not fetch organizations (might be personal profile only)')
+    }
+
     // 🔍 LOG: Profile response
     console.log('🔍 LinkedIn Callback - Profile response:', {
       status: profileResponse.status,
@@ -114,6 +141,20 @@ export async function GET(req: NextRequest) {
       picture: profileData.picture,
     })
 
+    // Determine profile type based on organizations
+    const profileType = organizations.length > 0 ? 'COMPANY_PAGE' : 'PERSONAL'
+    const organizationData = organizations[0] ? {
+      organizationId: organizations[0]['organizationalTarget~']?.id,
+      organizationName: organizations[0]['organizationalTarget~']?.localizedName,
+      organizationUrn: organizations[0].organizationalTarget,
+    } : {}
+
+    console.log('🔍 LinkedIn Callback - Profile type detected:', {
+      profileType,
+      hasOrganizations: organizations.length > 0,
+      ...organizationData,
+    })
+
     // Calculate expiration date
     const expiresAt = new Date(Date.now() + (expires_in || 60 * 24 * 60 * 60) * 1000)
 
@@ -123,9 +164,14 @@ export async function GET(req: NextRequest) {
       expiresAt: expiresAt.toISOString(),
     })
 
-    // Save or update integration (OpenID Connect format)
+    // Save or update integration (OpenID Connect format with profile type detection)
     await prisma.linkedInIntegration.upsert({
-      where: { tenantId },
+      where: { 
+        tenantId_linkedinId: {
+          tenantId,
+          linkedinId: profileData.sub,
+        }
+      },
       create: {
         tenantId,
         accessToken: access_token,
@@ -134,15 +180,22 @@ export async function GET(req: NextRequest) {
         linkedinId: profileData.sub,
         profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
         profileImage: profileData.picture,
+        profileType: profileType as any,
+        organizationId: organizationData.organizationId || null,
+        organizationName: organizationData.organizationName || null,
+        organizationUrn: organizationData.organizationUrn || null,
         isActive: true,
       },
       update: {
         accessToken: access_token,
         refreshToken: tokenData.refresh_token || null,
         expiresAt,
-        linkedinId: profileData.sub,
         profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
         profileImage: profileData.picture,
+        profileType: profileType as any,
+        organizationId: organizationData.organizationId || null,
+        organizationName: organizationData.organizationName || null,
+        organizationUrn: organizationData.organizationUrn || null,
         isActive: true,
       },
     })

@@ -155,16 +155,29 @@ model ContentSource {
   @@map("content_sources")
 }
 
-// LinkedIn integration per tenant
+// LinkedIn profile types
+enum LinkedInProfileType {
+  PERSONAL
+  COMPANY_PAGE
+}
+
+// LinkedIn integration per tenant (supports multiple profiles)
 model LinkedInIntegration {
-  id           String    @id @default(cuid())
-  tenantId     String    @unique
+  id           String               @id @default(cuid())
+  tenantId     String
   accessToken  String
   refreshToken String?
   expiresAt    DateTime?
   linkedinId   String
   profileName  String?
   profileImage String?
+  profileType  LinkedInProfileType  @default(PERSONAL)
+  
+  // Company page specific fields
+  organizationId   String?  // LinkedIn Organization ID
+  organizationName String?  // Company name
+  organizationUrn  String?  // urn:li:organization:{id}
+  
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
@@ -172,6 +185,8 @@ model LinkedInIntegration {
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
+  // Compound unique: same tenant can have multiple profiles, but not duplicate LinkedIn IDs
+  @@unique([tenantId, linkedinId])
   @@map("linkedin_integrations")
 }
 

@@ -5,7 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-// GET LinkedIn integration status
+// GET LinkedIn integrations status (supports multiple profiles)
 
 export async function GET(req: NextRequest) {
   try {
@@ -18,24 +18,26 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const integration = await prisma.linkedInIntegration.findUnique({
+    const integrations = await prisma.linkedInIntegration.findMany({
       where: { tenantId: session.user.tenantId },
       select: {
         id: true,
         linkedinId: true,
         profileName: true,
         profileImage: true,
+        profileType: true,
+        organizationName: true,
+        organizationId: true,
         isActive: true,
         expiresAt: true,
         createdAt: true,
       },
+      orderBy: {
+        createdAt: 'asc',
+      },
     })
 
-    if (!integration) {
-      return NextResponse.json({ integration: null })
-    }
-
-    return NextResponse.json({ integration })
+    return NextResponse.json({ integrations })
   } catch (error) {
     console.error('Get LinkedIn integration error:', error)
     return NextResponse.json(
@@ -45,7 +47,7 @@ export async function GET(req: NextRequest) {
   }
 }
 
-// DELETE LinkedIn integration (disconnect)
+// DELETE LinkedIn integration (disconnect by ID)
 export async function DELETE(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
@@ -65,8 +67,22 @@ export async function DELETE(req: NextRequest) {
       )
     }
 
-    const integration = await prisma.linkedInIntegration.findUnique({
-      where: { tenantId: session.user.tenantId },
+    // Get integration ID from query params
+    const { searchParams } = new URL(req.url)
+    const integrationId = searchParams.get('id')
+
+    if (!integrationId) {
+      return NextResponse.json(
+        { error: 'Integration ID required' },
+        { status: 400 }
+      )
+    }
+
+    const integration = await prisma.linkedInIntegration.findFirst({
+      where: { 
+        id: integrationId,
+        tenantId: session.user.tenantId,
+      },
     })
 
     if (!integration) {
