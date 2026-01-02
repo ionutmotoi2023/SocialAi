@@ -76,12 +76,16 @@ export async function generateContent(
         }
       ]
 
-      // Add all media URLs as image_url entries
+      // Add all media URLs as image_url entries (convert relative to absolute)
+      const baseUrl = process.env.NEXTAUTH_URL || 'http://localhost:3000'
       params.mediaUrls!.forEach(url => {
+        // Convert relative URLs to absolute
+        const fullUrl = url.startsWith('http') ? url : `${baseUrl}${url}`
+        
         userContent.push({
           type: 'image_url',
           image_url: {
-            url: url,
+            url: fullUrl,
             detail: 'high' // Use 'high' for better image analysis
           },
         })
