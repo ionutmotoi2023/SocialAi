@@ -46,11 +46,48 @@ export async function POST(req: NextRequest) {
       )
     }
 
-    // Generate content using OpenAI
+    // Get brand training data for enhanced context
+    const brandData = await prisma.brandTrainingData.findMany({
+      where: { tenantId: session.user.tenantId },
+      orderBy: { lastUpdated: 'desc' },
+      take: 5, // Get most recent 5 sections
+    })
+
+    // Get tenant info
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: {
+        name: true,
+        industry: true,
+        website: true,
+        description: true,
+      },
+    })
+
+    // Build enhanced brand context
+    let brandContext = ''
+    if (tenant) {
+      brandContext += `\n\nBRAND INFORMATION:\n`
+      brandContext += `Company: ${tenant.name}\n`
+      if (tenant.industry) brandContext += `Industry: ${tenant.industry}\n`
+      if (tenant.website) brandContext += `Website: ${tenant.website}\n`
+      if (tenant.description) brandContext += `Description: ${tenant.description}\n`
+    }
+
+    if (brandData.length > 0) {
+      brandContext += `\n\nBRAND KNOWLEDGE FROM WEBSITE:\n`
+      brandData.forEach((data) => {
+        brandContext += `\n[${data.category.toUpperCase()}]:\n${data.content.substring(0, 500)}...\n`
+      })
+      brandContext += `\nUse this information to align the content with the brand's voice, values, and messaging.\n`
+    }
+
+    // Generate content using OpenAI with enhanced context
     const generatedContent = await generateContent({
       prompt,
       mediaUrls,
       brandVoice: aiConfig.brandVoice || undefined,
+      brandContext, // NEW: Pass brand context
       tone: aiConfig.tonePreference as any,
       postLength: aiConfig.postLength as any,
       includeHashtags: includeHashtags && aiConfig.includeEmojis,

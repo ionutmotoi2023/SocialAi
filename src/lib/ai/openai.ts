@@ -34,6 +34,7 @@ export interface GenerateContentParams {
   prompt: string
   mediaUrls?: string[]
   brandVoice?: string
+  brandContext?: string // NEW: Brand training data context
   tone?: 'professional' | 'casual' | 'enthusiastic' | 'technical'
   postLength?: 'short' | 'medium' | 'long'
   includeHashtags?: boolean
@@ -148,6 +149,7 @@ export async function generateContent(
 function buildSystemPrompt(params: GenerateContentParams): string {
   const {
     brandVoice,
+    brandContext, // NEW
     tone = 'professional',
     postLength = 'medium',
     includeHashtags = true,
@@ -158,8 +160,14 @@ function buildSystemPrompt(params: GenerateContentParams): string {
 
   let prompt = `You are an expert social media content creator specializing in ${platform} posts.`
 
+  // Add brand context if available
+  if (brandContext) {
+    prompt += `\n\n${brandContext}`
+    prompt += `\n\nIMPORTANT: Use the brand information above to create content that aligns with the company's voice, values, and messaging. Reference specific products, services, or values when relevant.`
+  }
+
   if (brandVoice) {
-    prompt += `\n\nBrand Voice: ${brandVoice}`
+    prompt += `\n\nBrand Voice Guidelines: ${brandVoice}`
   }
 
   prompt += `\n\nTone: ${tone}`

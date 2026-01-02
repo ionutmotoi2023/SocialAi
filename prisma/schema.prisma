@@ -32,6 +32,7 @@ model Tenant {
   linkedinIntegrations LinkedInIntegration[]
   invitations     Invitation[]
   aiLearningData  AILearningData[]
+  brandTrainingData BrandTrainingData[]
 
   @@map("tenants")
 }
@@ -249,4 +250,20 @@ model Invitation {
 
   @@unique([email, tenantId])
   @@map("invitations")
+}
+
+// Brand training data from website scraping
+model BrandTrainingData {
+  id          String   @id @default(cuid())
+  tenantId    String
+  sourceUrl   String
+  content     String   @db.Text
+  category    String   // 'about', 'products', 'services', 'values', 'tone', 'general'
+  lastUpdated DateTime @default(now()) @updatedAt
+  createdAt   DateTime @default(now())
+  
+  // Relations
+  tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+
+  @@map("brand_training_data")
 }
