@@ -380,7 +380,7 @@ export default function AutoPilotPage() {
       </Card>
 
       {/* Actions */}
-      <div className="flex gap-4">
+      <div className="flex flex-col sm:flex-row gap-4">
         <Button size="lg" onClick={saveConfig} disabled={saving} className="flex-1">
           <SettingsIcon className="h-5 w-5 mr-2" />
           {saving ? 'Saving...' : 'Save Configuration'}
@@ -388,10 +388,10 @@ export default function AutoPilotPage() {
 
         <Button 
           size="lg" 
-          variant="outline"
+          variant="secondary"
           onClick={generateBulk}
           disabled={generating}
-          className="flex-1"
+          className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white"
         >
           <Sparkles className="h-5 w-5 mr-2" />
           {generating ? 'Generating...' : 'Generate Now'}
