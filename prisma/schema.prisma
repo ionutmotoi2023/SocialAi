@@ -74,6 +74,17 @@ model AIConfig {
   hashtagStrategy String   @default("moderate") // minimal, moderate, extensive
   includeEmojis   Boolean  @default(true)
   includeCTA      Boolean  @default(true)
+  
+  // Brand Variables for dynamic replacement in AI prompts
+  companyName     String?  // e.g., "TechFlow Solutions"
+  companyTagline  String?  // e.g., "Empowering businesses with AI"
+  targetAudience  String?  // e.g., "B2B SaaS companies, tech startups"
+  keyProducts     String?  // e.g., "AI Analytics Platform, Customer Insights Dashboard"
+  uniqueValue     String?  // e.g., "40% faster implementation, 24/7 support"
+  foundedYear     String?  // e.g., "2020"
+  teamSize        String?  // e.g., "50-100 employees"
+  headquarters    String?  // e.g., "San Francisco, CA"
+  
   createdAt       DateTime @default(now())
   updatedAt       DateTime @updatedAt
   
