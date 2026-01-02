@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon } from 'lucide-react'
+import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon, Home } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ImageUpload } from '@/components/upload/image-upload'
 
@@ -123,9 +123,26 @@ export default function CreatePostPage() {
               <h1 className="text-2xl font-bold text-gray-900">Create Post</h1>
               <p className="text-sm text-gray-600">Generate AI-powered content for your social media</p>
             </div>
-            <Button variant="outline" onClick={() => router.push('/dashboard')}>
-              Back to Dashboard
-            </Button>
+            <div className="flex items-center gap-2">
+              {/* Mobile Home Button */}
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/dashboard')}
+                className="lg:hidden"
+                title="Go to Home"
+              >
+                <Home className="h-5 w-5" />
+              </Button>
+              {/* Desktop Back Button */}
+              <Button
+                variant="outline"
+                onClick={() => router.push('/dashboard')}
+                className="hidden lg:flex"
+              >
+                Back to Dashboard
+              </Button>
+            </div>
           </div>
         </header>
 

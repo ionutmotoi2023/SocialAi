@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { ArrowLeft, Save, Trash2, Calendar, Send, Loader2, Image as ImageIcon } from 'lucide-react'
+import { ArrowLeft, Home, Save, Trash2, Calendar, Send, Loader2, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { ImageUpload } from '@/components/upload/image-upload'
@@ -197,6 +197,15 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                 onClick={() => router.push('/dashboard/posts')}
               >
                 <ArrowLeft className="h-5 w-5" />
+              </Button>
+              <Button
+                variant="ghost"
+                size="icon"
+                onClick={() => router.push('/dashboard')}
+                className="lg:hidden"
+                title="Go to Home"
+              >
+                <Home className="h-5 w-5" />
               </Button>
               <div>
                 <h1 className="text-2xl font-bold text-gray-900">Edit Post</h1>
