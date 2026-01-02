@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { generateAndProcessImage, generateCustomImage, processExistingImage } from '@/lib/image/dalle-workflow'
+import { prisma } from '@/lib/prisma'
 
 // POST /api/ai/generate-image - Generate image with DALL-E 3
 export async function POST(request: NextRequest) {
@@ -37,9 +38,38 @@ export async function POST(request: NextRequest) {
           )
         }
 
+        // Fetch brand and tenant context for better image generation
+        const brandData = await prisma.brandTrainingData.findMany({
+          where: { tenantId: session.user.tenantId },
+          orderBy: { lastUpdated: 'desc' },
+          take: 3,
+        })
+
+        const tenant = await prisma.tenant.findUnique({
+          where: { id: session.user.tenantId },
+          select: {
+            name: true,
+            industry: true,
+            description: true,
+          },
+        })
+
+        // Build context for image generation
+        const brandContextString = brandData.length > 0
+          ? brandData.map(d => `[${d.category}]: ${d.content.substring(0, 300)}`).join('\n')
+          : undefined
+
+        const tenantInfoData = tenant ? {
+          name: tenant.name,
+          industry: tenant.industry || undefined,
+          description: tenant.description || undefined
+        } : undefined
+
         result = await generateAndProcessImage(postContent, session.user.tenantId, {
           platform,
           style,
+          brandContext: brandContextString,
+          tenantInfo: tenantInfoData,
         })
         break
 

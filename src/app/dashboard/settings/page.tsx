@@ -8,12 +8,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Bot, Save, Sparkles, Globe, Rss } from 'lucide-react'
+import { Bot, Save, Sparkles, Globe, Rss, Image as ImageIcon } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { BrandTrainingTab } from '@/components/settings/brand-training-tab'
 import { ContentSourcesTab } from '@/components/settings/content-sources-tab'
+import { BrandAssetsTab } from '@/components/settings/brand-assets-tab'
 
-type TabType = 'ai' | 'brand' | 'content'
+type TabType = 'ai' | 'brand' | 'content' | 'assets'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -133,6 +134,17 @@ export default function SettingsPage() {
                 <Rss className="h-4 w-4 inline mr-2" />
                 Content Sources
               </button>
+              <button
+                onClick={() => setActiveTab('assets')}
+                className={`py-4 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'assets'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <ImageIcon className="h-4 w-4 inline mr-2" />
+                Brand Assets
+              </button>
             </div>
           </div>
         </div>
@@ -145,11 +157,13 @@ export default function SettingsPage() {
                 {activeTab === 'ai' && 'AI Settings'}
                 {activeTab === 'brand' && 'Brand Training'}
                 {activeTab === 'content' && 'Content Sources'}
+                {activeTab === 'assets' && 'Brand Assets'}
               </h1>
               <p className="text-sm text-gray-600">
                 {activeTab === 'ai' && 'Configure your AI and platform preferences'}
                 {activeTab === 'brand' && 'Train AI on your brand voice and values'}
                 {activeTab === 'content' && 'Manage RSS feeds and content sources'}
+                {activeTab === 'assets' && 'Manage your logos, watermarks, and brand images'}
               </p>
             </div>
             {activeTab === 'ai' && (
@@ -170,6 +184,7 @@ export default function SettingsPage() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
+            {activeTab === 'assets' && <BrandAssetsTab />}
             {activeTab === 'ai' && (
               <div className="space-y-6">
                 {/* Tenant Info */}

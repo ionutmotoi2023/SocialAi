@@ -22,12 +22,22 @@ export async function generateAndProcessImage(
   options: {
     platform?: 'linkedin' | 'twitter' | 'facebook'
     style?: 'professional' | 'creative' | 'minimalist' | 'bold'
+    brandContext?: string
+    rssInspiration?: {
+      title: string
+      content: string
+    }
+    tenantInfo?: {
+      name: string
+      industry?: string
+      description?: string
+    }
   } = {}
 ): Promise<ImageGenerationResult> {
   try {
-    console.log('🎨 Starting DALL-E 3 image generation workflow...')
+    console.log('🎨 Starting DALL-E 3 image generation workflow with enhanced context...')
 
-    // Step 1: Generate image with DALL-E 3
+    // Step 1: Generate image with DALL-E 3 (with full context)
     console.log('Step 1: Generating image with DALL-E 3...')
     const dalleResult = await generateImageForPost(postContent, options)
     console.log('✅ DALL-E 3 generated image:', dalleResult.url)
