@@ -16,6 +16,9 @@ interface LinkedInIntegration {
   linkedinId: string
   profileName?: string
   profileImage?: string
+  profileType: 'PERSONAL' | 'COMPANY_PAGE'
+  organizationName?: string
+  organizationId?: string
   isActive: boolean
   expiresAt?: string
   createdAt: string
@@ -24,27 +27,25 @@ interface LinkedInIntegration {
 export default function IntegrationsPage() {
   const { data: session } = useSession()
   const { toast } = useToast()
-  const [integration, setIntegration] = useState<LinkedInIntegration | null>(null)
+  const [integrations, setIntegrations] = useState<LinkedInIntegration[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [isConnecting, setIsConnecting] = useState(false)
-  const [isDisconnecting, setIsDisconnecting] = useState(false)
+  const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
 
   useEffect(() => {
-    fetchIntegration()
+    fetchIntegrations()
   }, [])
 
-  const fetchIntegration = async () => {
+  const fetchIntegrations = async () => {
     try {
       setIsLoading(true)
       const response = await fetch('/api/integrations/linkedin')
       if (response.ok) {
         const data = await response.json()
-        if (data.integration) {
-          setIntegration(data.integration)
-        }
+        setIntegrations(data.integrations || [])
       }
     } catch (error) {
-      console.error('Failed to fetch integration:', error)
+      console.error('Failed to fetch integrations:', error)
     } finally {
       setIsLoading(false)
     }
@@ -72,21 +73,21 @@ export default function IntegrationsPage() {
       if (popup?.closed) {
         clearInterval(checkPopup)
         setIsConnecting(false)
-        // Refresh integration status
-        fetchIntegration()
+        // Refresh integrations status
+        fetchIntegrations()
       }
     }, 500)
   }
 
-  const handleDisconnect = async () => {
-    if (!confirm('Are you sure you want to disconnect your LinkedIn account?')) {
+  const handleDisconnect = async (integrationId: string, profileName: string) => {
+    if (!confirm(`Are you sure you want to disconnect ${profileName}?`)) {
       return
     }
 
-    setIsDisconnecting(true)
+    setDisconnectingId(integrationId)
 
     try {
-      const response = await fetch('/api/integrations/linkedin', {
+      const response = await fetch(`/api/integrations/linkedin?id=${integrationId}`, {
         method: 'DELETE',
       })
 
@@ -96,10 +97,11 @@ export default function IntegrationsPage() {
 
       toast({
         title: 'Success',
-        description: 'LinkedIn account disconnected',
+        description: `${profileName} disconnected`,
       })
 
-      setIntegration(null)
+      // Remove from local state
+      setIntegrations(integrations.filter(i => i.id !== integrationId))
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -107,7 +109,7 @@ export default function IntegrationsPage() {
         variant: 'destructive',
       })
     } finally {
-      setIsDisconnecting(false)
+      setDisconnectingId(null)
     }
   }
 
@@ -170,25 +172,27 @@ export default function IntegrationsPage() {
                     <div>
                       <CardTitle className="flex items-center">
                         LinkedIn
-                        {integration?.isActive && (
-                          <Badge className="ml-2 bg-green-500">Connected</Badge>
+                        {integrations.length > 0 && (
+                          <Badge className="ml-2 bg-green-500">
+                            {integrations.length} Connected
+                          </Badge>
                         )}
                       </CardTitle>
                       <CardDescription>
-                        Publish posts directly to your LinkedIn profile
+                        Publish posts to your personal profile or company pages
                       </CardDescription>
                     </div>
                   </div>
                 </div>
               </CardHeader>
               <CardContent className="space-y-6">
-                {!integration ? (
-                  // Not connected state
+                {integrations.length === 0 ? (
+                  // No connections state
                   <div className="text-center py-8">
                     <Linkedin className="h-16 w-16 mx-auto text-gray-300 mb-4" />
                     <h3 className="text-lg font-semibold mb-2">Connect LinkedIn</h3>
                     <p className="text-gray-600 mb-6">
-                      Connect your LinkedIn account to publish posts directly from the platform
+                      Connect your LinkedIn profile or company pages to publish posts directly
                     </p>
                     <Button
                       onClick={handleConnect}
@@ -210,109 +214,114 @@ export default function IntegrationsPage() {
                     </Button>
                     
                     <div className="mt-6 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                      <p className="text-sm text-blue-900 font-medium mb-2">Required Permissions:</p>
+                      <p className="text-sm text-blue-900 font-medium mb-2">What you can connect:</p>
                       <ul className="text-sm text-blue-800 space-y-1">
-                        <li>• Read your profile information</li>
-                        <li>• Post content on your behalf</li>
-                        <li>• Access your email address</li>
+                        <li>• Your personal LinkedIn profile</li>
+                        <li>• Company pages you manage</li>
+                        <li>• You can add multiple profiles!</li>
                       </ul>
                     </div>
                   </div>
                 ) : (
-                  // Connected state
+                  // Connected profiles
                   <div className="space-y-4">
-                    {/* Profile Info */}
-                    {integration.profileImage && (
-                      <div className="flex items-center space-x-4">
-                        <img
-                          src={integration.profileImage}
-                          alt="LinkedIn Profile"
-                          className="w-16 h-16 rounded-full"
-                        />
-                        <div>
-                          <p className="font-semibold">{integration.profileName || 'LinkedIn User'}</p>
-                          <p className="text-sm text-gray-500">ID: {integration.linkedinId}</p>
-                        </div>
-                      </div>
-                    )}
-
-                    {/* Status */}
-                    <div className="grid grid-cols-2 gap-4 p-4 bg-gray-50 rounded-lg">
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Status</p>
-                        <div className="flex items-center">
-                          {integration.isActive ? (
-                            <>
-                              <CheckCircle className="h-4 w-4 text-green-600 mr-2" />
-                              <span className="text-sm font-medium text-green-600">Active</span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="h-4 w-4 text-red-600 mr-2" />
-                              <span className="text-sm font-medium text-red-600">Inactive</span>
-                            </>
-                          )}
-                        </div>
-                      </div>
-                      <div>
-                        <p className="text-sm text-gray-600 mb-1">Connected Since</p>
-                        <p className="text-sm font-medium">
-                          {format(new Date(integration.createdAt), 'MMM dd, yyyy')}
-                        </p>
-                      </div>
-                      {integration.expiresAt && (
-                        <div className="col-span-2">
-                          <p className="text-sm text-gray-600 mb-1">Token Expires</p>
-                          <p className="text-sm font-medium">
-                            {format(new Date(integration.expiresAt), 'MMM dd, yyyy HH:mm')}
-                          </p>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Actions */}
-                    <div className="flex gap-3">
-                      <Button
-                        variant="outline"
-                        onClick={handleTestConnection}
+                    {/* Connected profiles list */}
+                    {integrations.map((integration) => (
+                      <div 
+                        key={integration.id} 
+                        className="p-4 border rounded-lg bg-gray-50"
                       >
-                        <ExternalLink className="mr-2 h-4 w-4" />
-                        Test Connection
-                      </Button>
-                      <Button
-                        variant="outline"
-                        onClick={handleConnect}
-                        disabled={isConnecting}
-                      >
-                        {isConnecting ? (
+                        <div className="flex items-start justify-between">
+                          <div className="flex items-center space-x-4">
+                            {integration.profileImage && (
+                              <img
+                                src={integration.profileImage}
+                                alt="LinkedIn Profile"
+                                className="w-14 h-14 rounded-full"
+                              />
+                            )}
+                            <div>
+                              <div className="flex items-center gap-2">
+                                <p className="font-semibold">
+                                  {integration.profileType === 'COMPANY_PAGE' 
+                                    ? integration.organizationName 
+                                    : integration.profileName || 'LinkedIn User'}
+                                </p>
+                                <Badge 
+                                  className={
+                                    integration.profileType === 'COMPANY_PAGE' 
+                                      ? 'bg-purple-500' 
+                                      : 'bg-blue-500'
+                                  }
+                                >
+                                  {integration.profileType === 'COMPANY_PAGE' ? 'Company Page' : 'Personal'}
+                                </Badge>
+                                {integration.isActive && (
+                                  <Badge className="bg-green-500">Active</Badge>
+                                )}
+                              </div>
+                              <p className="text-sm text-gray-500 mt-1">
+                                ID: {integration.linkedinId}
+                              </p>
+                              <p className="text-sm text-gray-500">
+                                Connected: {format(new Date(integration.createdAt), 'MMM dd, yyyy')}
+                              </p>
+                              {integration.expiresAt && (
+                                <p className="text-xs text-gray-400">
+                                  Expires: {format(new Date(integration.expiresAt), 'MMM dd, yyyy')}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                          
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDisconnect(
+                              integration.id, 
+                              integration.profileType === 'COMPANY_PAGE' 
+                                ? integration.organizationName || 'Company Page'
+                                : integration.profileName || 'Profile'
+                            )}
+                            disabled={disconnectingId === integration.id}
+                          >
+                            {disconnectingId === integration.id ? (
+                              <Loader2 className="h-4 w-4 animate-spin" />
+                            ) : (
+                              'Disconnect'
+                            )}
+                          </Button>
+                        </div>
+                      </div>
+                    ))}
+
+                    {/* Add another button */}
+                    <Button
+                      variant="outline"
+                      onClick={handleConnect}
+                      disabled={isConnecting}
+                      className="w-full"
+                    >
+                      {isConnecting ? (
+                        <>
                           <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        ) : (
-                          'Reconnect'
-                        )}
-                      </Button>
-                      <Button
-                        variant="destructive"
-                        onClick={handleDisconnect}
-                        disabled={isDisconnecting}
-                      >
-                        {isDisconnecting ? (
-                          <>
-                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            Disconnecting...
-                          </>
-                        ) : (
-                          'Disconnect'
-                        )}
-                      </Button>
-                    </div>
+                          Connecting...
+                        </>
+                      ) : (
+                        <>
+                          <Linkedin className="mr-2 h-4 w-4" />
+                          Connect Another Profile
+                        </>
+                      )}
+                    </Button>
 
                     {/* Info */}
                     <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
                       <p className="text-sm text-blue-900 font-medium mb-1">
-                        Your LinkedIn account is connected!
+                        {integrations.length} LinkedIn {integrations.length === 1 ? 'profile' : 'profiles'} connected!
                       </p>
                       <p className="text-sm text-blue-800">
-                        You can now publish posts directly to LinkedIn from the calendar or post creation page.
+                        You can select which profile to use when creating posts.
                       </p>
                     </div>
                   </div>
