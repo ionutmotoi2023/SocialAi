@@ -49,8 +49,6 @@ export function StatsCards() {
       icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
-      change: '+12%',
-      changeColor: 'text-green-600',
     },
     {
       title: 'Scheduled',
@@ -58,8 +56,6 @@ export function StatsCards() {
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
-      change: '+8%',
-      changeColor: 'text-green-600',
     },
     {
       title: 'Published',
@@ -67,8 +63,6 @@ export function StatsCards() {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
-      change: '+15%',
-      changeColor: 'text-green-600',
     },
     {
       title: 'AI Generated',
@@ -76,8 +70,6 @@ export function StatsCards() {
       icon: Zap,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
-      change: '+25%',
-      changeColor: 'text-green-600',
     },
     {
       title: 'AI Confidence',
@@ -85,8 +77,6 @@ export function StatsCards() {
       icon: TrendingUp,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
-      change: '+3%',
-      changeColor: 'text-green-600',
     },
     {
       title: 'Time Saved',
@@ -94,8 +84,6 @@ export function StatsCards() {
       icon: Clock,
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
-      change: '+18h',
-      changeColor: 'text-green-600',
     },
   ]
 
@@ -127,10 +115,6 @@ export function StatsCards() {
                   </p>
                   <p className="text-3xl font-bold text-gray-900">
                     {card.value}
-                  </p>
-                  <p className={`text-sm ${card.changeColor} mt-2 flex items-center`}>
-                    <TrendingUp className="h-4 w-4 mr-1" />
-                    {card.change} from last month
                   </p>
                 </div>
                 <div className={`${card.bgColor} ${card.color} p-3 rounded-lg`}>

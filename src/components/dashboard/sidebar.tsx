@@ -4,7 +4,7 @@ import { useSession, signOut } from 'next-auth/react'
 import { usePathname, useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { 
   LayoutDashboard, 
   FileText, 
@@ -27,6 +27,24 @@ export function DashboardSidebar() {
   const pathname = usePathname()
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [postsCount, setPostsCount] = useState<number>(0)
+
+  // Fetch real posts count from API
+  useEffect(() => {
+    const fetchPostsCount = async () => {
+      try {
+        const response = await fetch('/api/dashboard/stats')
+        if (response.ok) {
+          const data = await response.json()
+          setPostsCount(data.totalPosts || 0)
+        }
+      } catch (error) {
+        console.error('Failed to fetch posts count:', error)
+      }
+    }
+    
+    fetchPostsCount()
+  }, [])
 
   const navigation = [
     {
@@ -38,7 +56,7 @@ export function DashboardSidebar() {
       name: 'Posts',
       href: '/dashboard/posts',
       icon: FileText,
-      badge: '12',
+      badge: postsCount > 0 ? postsCount.toString() : undefined,
     },
     {
       name: 'Calendar',

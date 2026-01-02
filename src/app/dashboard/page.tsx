@@ -4,6 +4,7 @@ export const dynamic = 'force-dynamic'
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
@@ -11,9 +12,39 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Bot, Calendar, FileText, Image, Zap, TrendingUp } from 'lucide-react'
 
+interface AIInsights {
+  approvalRate: number
+  avgGenerationTime: number
+  userSatisfaction: number
+}
+
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const [aiInsights, setAiInsights] = useState<AIInsights>({
+    approvalRate: 0,
+    avgGenerationTime: 0,
+    userSatisfaction: 0,
+  })
+
+  useEffect(() => {
+    const fetchAIInsights = async () => {
+      try {
+        const response = await fetch('/api/dashboard/ai-insights')
+        if (response.ok) {
+          const data = await response.json()
+          setAiInsights(data)
+        }
+      } catch (error) {
+        console.error('Failed to fetch AI insights:', error)
+        // Use default values on error
+      }
+    }
+    
+    if (session) {
+      fetchAIInsights()
+    }
+  }, [session])
 
   if (status === 'loading') {
     return (
@@ -125,19 +156,31 @@ export default function DashboardPage() {
             <CardContent>
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
                 <div className="text-center p-4 bg-green-50 rounded-lg">
-                  <div className="text-3xl font-bold text-green-600 mb-1">92%</div>
+                  <div className="text-3xl font-bold text-green-600 mb-1">
+                    {aiInsights.approvalRate > 0 ? `${aiInsights.approvalRate}%` : 'N/A'}
+                  </div>
                   <div className="text-sm text-gray-600">Approval Rate</div>
-                  <div className="text-xs text-gray-500 mt-1">↑ 5% from last week</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {aiInsights.approvalRate > 0 ? 'Based on AI-generated posts' : 'No data yet'}
+                  </div>
                 </div>
                 <div className="text-center p-4 bg-blue-50 rounded-lg">
-                  <div className="text-3xl font-bold text-blue-600 mb-1">3.2s</div>
+                  <div className="text-3xl font-bold text-blue-600 mb-1">
+                    {aiInsights.avgGenerationTime > 0 ? `${aiInsights.avgGenerationTime}s` : 'N/A'}
+                  </div>
                   <div className="text-sm text-gray-600">Avg Generation Time</div>
-                  <div className="text-xs text-gray-500 mt-1">↓ 0.5s faster</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {aiInsights.avgGenerationTime > 0 ? 'Average AI response time' : 'No data yet'}
+                  </div>
                 </div>
                 <div className="text-center p-4 bg-purple-50 rounded-lg">
-                  <div className="text-3xl font-bold text-purple-600 mb-1">89%</div>
+                  <div className="text-3xl font-bold text-purple-600 mb-1">
+                    {aiInsights.userSatisfaction > 0 ? `${aiInsights.userSatisfaction}%` : 'N/A'}
+                  </div>
                   <div className="text-sm text-gray-600">User Satisfaction</div>
-                  <div className="text-xs text-gray-500 mt-1">↑ 3% improvement</div>
+                  <div className="text-xs text-gray-500 mt-1">
+                    {aiInsights.userSatisfaction > 0 ? 'Based on feedback scores' : 'No data yet'}
+                  </div>
                 </div>
               </div>
             </CardContent>
