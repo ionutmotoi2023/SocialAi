@@ -21,6 +21,17 @@ export async function POST(
       )
     }
 
+    // Get request body
+    const body = await req.json().catch(() => ({}))
+    const { linkedInIntegrationId } = body
+
+    if (!linkedInIntegrationId) {
+      return NextResponse.json(
+        { error: 'LinkedIn integration ID is required' },
+        { status: 400 }
+      )
+    }
+
     // Verify post belongs to tenant
     const post = await prisma.post.findFirst({
       where: {
@@ -36,8 +47,36 @@ export async function POST(
       )
     }
 
-    // Get LinkedIn client
-    const linkedInClient = await LinkedInClient.getClientForTenant(session.user.tenantId)
+    // Verify integration belongs to tenant
+    const integration = await prisma.linkedInIntegration.findFirst({
+      where: {
+        id: linkedInIntegrationId,
+        tenantId: session.user.tenantId,
+        isActive: true,
+      },
+    })
+
+    if (!integration) {
+      return NextResponse.json(
+        { error: 'LinkedIn integration not found or inactive' },
+        { status: 404 }
+      )
+    }
+
+    console.log('📤 Publishing to LinkedIn:', {
+      postId: post.id,
+      integrationId: integration.id,
+      profileType: integration.profileType,
+      destination: integration.profileType === 'COMPANY_PAGE' 
+        ? integration.organizationName 
+        : integration.profileName,
+    })
+
+    // Get LinkedIn client for this specific integration
+    const linkedInClient = new LinkedInClient(
+      integration.accessToken,
+      session.user.tenantId
+    )
 
     // Publish to LinkedIn
     let linkedInResponse
@@ -49,6 +88,11 @@ export async function POST(
     } else {
       linkedInResponse = await linkedInClient.shareTextPost(post.content)
     }
+
+    console.log('✅ LinkedIn publish success:', {
+      linkedInId: linkedInResponse.id,
+      activity: linkedInResponse.activity,
+    })
 
     // Update post status
     const updatedPost = await prisma.post.update({
@@ -66,7 +110,9 @@ export async function POST(
         id: linkedInResponse.id,
         activity: linkedInResponse.activity,
       },
-      message: 'Post published to LinkedIn successfully',
+      message: `Post published to ${integration.profileType === 'COMPANY_PAGE' 
+        ? integration.organizationName 
+        : integration.profileName} successfully`,
     })
   } catch (error: any) {
     console.error('LinkedIn publish error:', error)
