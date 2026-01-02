@@ -1,5 +1,5 @@
 {
-  "NEXTAUTH_URL": "https://socialai-production.up.railway.app",
+  "NEXTAUTH_URL": "https://socialai.mindloop.ro",
   "NEXTAUTH_SECRET": "7a251bba7f7897d34aeef867127fffee1d244237387b665e34c8379ff4d74688",
   "OPENAI_API_KEY": "sk-dummy-key-for-build-only-replace-with-real",
   "DATABASE_URL": "file:./dev.db",
@@ -10,5 +10,7 @@
   "SMTP_PASS": "your-app-password",
   "STRIPE_SECRET_KEY": "sk_test_dummy-replace-with-stripe",
   "WEBHOOK_SECRET": "whsec_dummy-replace-with-real",
+  "LINKEDIN_CLIENT_ID": "77n8woevltj8fw",
+  "LINKEDIN_CLIENT_SECRET": "YOUR_LINKEDIN_CLIENT_SECRET_HERE",
   "NEXT_BUILD_SKIP_ENV_VALIDATION": "true"
 }
