@@ -4,7 +4,6 @@ export const dynamic = 'force-dynamic'
 
 import { useSession } from 'next-auth/react'
 import { useRouter } from 'next/navigation'
-import { DashboardSidebar } from '@/components/dashboard/sidebar'
 import { DashboardHeader } from '@/components/dashboard/header'
 import { StatsCards } from '@/components/dashboard/stats-cards'
 import { RecentActivity } from '@/components/dashboard/recent-activity'
@@ -64,17 +63,12 @@ export default function DashboardPage() {
   ]
 
   return (
-    <div className="flex h-screen bg-gray-50">
-      {/* Sidebar */}
-      <DashboardSidebar />
+    <>
+      {/* Header */}
+      <DashboardHeader />
 
-      {/* Main Content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
-        {/* Header */}
-        <DashboardHeader />
-
-        {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+      {/* Content */}
+      <main className="flex-1 overflow-y-auto p-6">
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
@@ -149,7 +143,6 @@ export default function DashboardPage() {
             </CardContent>
           </Card>
         </main>
-      </div>
-    </div>
+    </>
   )
 }
