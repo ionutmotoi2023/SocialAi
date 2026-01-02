@@ -47,11 +47,6 @@ export function DashboardSidebar() {
       icon: Calendar,
     },
     {
-      name: 'Brand Assets',
-      href: '/dashboard/brand',
-      icon: ImageIcon,
-    },
-    {
       name: 'Auto-Pilot',
       href: '/dashboard/autopilot',
       icon: Zap,
@@ -136,7 +131,7 @@ export function DashboardSidebar() {
         ${isMobileMenuOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}
       `}>
       {/* Logo - Hidden on mobile (shown in top bar instead) */}
-      <div className="hidden lg:block p-6 border-b border-gray-200">
+      <div className="hidden lg:flex p-6 border-b border-gray-200 items-center justify-between">
         <Link href="/dashboard" className="flex items-center space-x-2">
           <Bot className="h-8 w-8 text-blue-600" />
           <div>
@@ -144,6 +139,15 @@ export function DashboardSidebar() {
             <div className="text-xs text-gray-500">AI MINDLOOP</div>
           </div>
         </Link>
+        <Button
+          variant="ghost"
+          size="icon"
+          onClick={() => router.push('/dashboard')}
+          title="Home"
+          className="flex-shrink-0"
+        >
+          <Home className="h-5 w-5" />
+        </Button>
       </div>
 
       {/* Tenant Info */}
