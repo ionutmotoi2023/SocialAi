@@ -70,12 +70,15 @@ export async function POST(
       destination: integration.profileType === 'COMPANY_PAGE' 
         ? integration.organizationName 
         : integration.profileName,
+      organizationUrn: integration.organizationUrn,
     })
 
     // Get LinkedIn client for this specific integration
+    // Pass organizationUrn for company pages
     const linkedInClient = new LinkedInClient(
       integration.accessToken,
-      session.user.tenantId
+      session.user.tenantId,
+      integration.organizationUrn || undefined // Pass org URN if company page
     )
 
     // Publish to LinkedIn

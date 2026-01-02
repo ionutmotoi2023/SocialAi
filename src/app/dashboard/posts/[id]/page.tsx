@@ -177,8 +177,18 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
     // ✅ Check if integration is selected
     if (!selectedIntegrationId) {
       toast({
-        title: 'No destination selected',
-        description: 'Please select a LinkedIn profile or company page to publish to',
+        title: '🔗 No LinkedIn account connected',
+        description: 'Please go to Settings → Integrations and connect your LinkedIn account first, then refresh this page.',
+        variant: 'destructive',
+      })
+      return
+    }
+
+    // ✅ Additional check if integrations list is empty
+    if (linkedInIntegrations.length === 0) {
+      toast({
+        title: '🔗 LinkedIn not connected',
+        description: 'You need to connect at least one LinkedIn account. Go to Settings → Integrations → Connect LinkedIn.',
         variant: 'destructive',
       })
       return
@@ -266,9 +276,10 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
     try {
       // Validate schedule date/time
       if (!scheduledDate || !scheduledTime) {
+        setIsScheduling(false) // ✅ Reset loading state
         toast({
-          title: 'Missing schedule',
-          description: 'Please select both date and time to schedule',
+          title: '📅 Schedule date/time missing',
+          description: 'Please scroll down and select both date and time in the "Scheduling" section before clicking Reschedule.',
           variant: 'destructive',
         })
         return
@@ -278,9 +289,10 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
       
       // Check if date is in the future
       if (scheduledAt <= new Date()) {
+        setIsScheduling(false) // ✅ Reset loading state
         toast({
-          title: 'Invalid schedule',
-          description: 'Please select a future date and time',
+          title: '⏰ Invalid schedule time',
+          description: 'Please select a future date and time. The scheduled time must be after the current time.',
           variant: 'destructive',
         })
         return
@@ -445,7 +457,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                   </Button>
                   
                   {/* LinkedIn Destination Selector */}
-                  {linkedInIntegrations.length > 0 && (
+                  {linkedInIntegrations.length > 0 ? (
                     <Select
                       value={selectedIntegrationId}
                       onValueChange={setSelectedIntegrationId}
@@ -477,12 +489,17 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                         ))}
                       </SelectContent>
                     </Select>
+                  ) : (
+                    <Badge variant="outline" className="text-orange-600 border-orange-600">
+                      ⚠️ No LinkedIn connected
+                    </Badge>
                   )}
                   
                   <Button
                     onClick={handlePublishNow}
                     disabled={isPublishing || isSaving || linkedInIntegrations.length === 0}
-                    className="bg-green-600 hover:bg-green-700"
+                    className="bg-green-600 hover:bg-green-700 disabled:opacity-50"
+                    title={linkedInIntegrations.length === 0 ? '⚠️ Connect LinkedIn in Settings → Integrations first' : ''}
                   >
                     {isPublishing ? (
                       <>
