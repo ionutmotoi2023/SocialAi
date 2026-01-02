@@ -314,9 +314,14 @@ export default function AutoPilotPage() {
 
             {/* ✅ NEW: Image Count Setting */}
             <div>
-              <label className="block text-sm font-medium mb-2">
-                Images Per Post: {config.imageCount}
-              </label>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-medium">
+                  Images Per Post
+                </label>
+                <span className="text-lg font-bold text-blue-600">
+                  {config.imageCount} {config.imageCount === 1 ? 'image' : 'images'}
+                </span>
+              </div>
               <input
                 type="range"
                 min="0"
@@ -326,10 +331,10 @@ export default function AutoPilotPage() {
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
-                {config.imageCount === 0 && 'No images (text only)'}
-                {config.imageCount === 1 && 'Single hero image'}
-                {config.imageCount === 2 && 'Before & After story (2 images)'}
-                {config.imageCount === 3 && 'Complete story: Problem → Solution → Result (3 images)'}
+                {config.imageCount === 0 && '📝 No images (text only)'}
+                {config.imageCount === 1 && '🖼️ Single hero image'}
+                {config.imageCount === 2 && '📸 Before & After story (2 images)'}
+                {config.imageCount === 3 && '🎬 Complete story: Problem → Solution → Result (3 images)'}
               </p>
             </div>
 
