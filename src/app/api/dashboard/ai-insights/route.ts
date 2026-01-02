@@ -18,12 +18,18 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const tenantId = session.user.tenantId
+    // For SUPER_ADMIN, show platform-wide stats
+    // For other roles, show tenant-specific stats
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
+    const tenantId = isSuperAdmin ? undefined : session.user.tenantId
+
+    // Build where clause based on role
+    const whereClause = tenantId ? { tenantId } : {}
 
     // Get AI-generated posts with approval/rejection data
     const aiPosts = await prisma.post.findMany({
       where: {
-        tenantId,
+        ...whereClause,
         aiGenerated: true,
       },
       select: {

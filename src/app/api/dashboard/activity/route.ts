@@ -17,11 +17,17 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const tenantId = session.user.tenantId
+    // For SUPER_ADMIN, show platform-wide activity
+    // For other roles, show tenant-specific activity
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
+    const tenantId = isSuperAdmin ? undefined : session.user.tenantId
+
+    // Build where clause based on role
+    const whereClause = tenantId ? { tenantId } : {}
 
     // Get recent posts and activities
     const recentPosts = await prisma.post.findMany({
-      where: { tenantId },
+      where: whereClause,
       orderBy: { createdAt: 'desc' },
       take: 10,
       select: {
