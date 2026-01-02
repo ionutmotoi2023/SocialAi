@@ -5,6 +5,7 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateContent } from '@/lib/ai/openai'
+import { generateAndProcessImage } from '@/lib/image/dalle-workflow'
 
 // POST /api/autopilot/generate - Bulk generate posts
 
@@ -16,7 +17,13 @@ export async function POST(request: NextRequest) {
     }
 
     const body = await request.json()
-    const { count = 5, confidenceThreshold = 0.8, topics = [] } = body
+    const { 
+      count = 5, 
+      confidenceThreshold = 0.8, 
+      topics = [],
+      generateImages = true, // NEW: Option to generate images
+      imageStyle = 'professional' // NEW: Image style option
+    } = body
 
     // Get AI config for tenant
     const aiConfig = await prisma.aIConfig.findUnique({
@@ -96,6 +103,27 @@ export async function POST(request: NextRequest) {
         })
         const generationTimeSeconds = Math.round((Date.now() - startTime) / 1000) // Convert to seconds
 
+        // NEW: Generate image with DALL-E 3 if enabled
+        let mediaUrls: string[] = []
+        if (generateImages) {
+          try {
+            console.log(`Generating image for post ${i + 1}...`)
+            const imageResult = await generateAndProcessImage(
+              result.text,
+              session.user.tenantId,
+              {
+                platform: 'linkedin',
+                style: imageStyle as 'professional' | 'creative' | 'minimalist' | 'bold'
+              }
+            )
+            mediaUrls = [imageResult.imageUrl]
+            console.log(`✅ Image generated and watermarked: ${imageResult.imageUrl}`)
+          } catch (imageError) {
+            console.error(`Failed to generate image for post ${i + 1}:`, imageError)
+            // Continue without image if generation fails
+          }
+        }
+
         // Only create if confidence is above threshold
         if (result.confidence >= confidenceThreshold) {
           const post = await prisma.post.create({
@@ -103,6 +131,7 @@ export async function POST(request: NextRequest) {
               tenantId: session.user.tenantId,
               userId: session.user.id,
               content: result.text,
+              mediaUrls, // NEW: Include generated images
               status: 'APPROVED', // Auto-approve high confidence
               aiGenerated: true,
               aiModel: aiConfig.selectedModel,
@@ -125,6 +154,7 @@ export async function POST(request: NextRequest) {
               tenantId: session.user.tenantId,
               userId: session.user.id,
               content: result.text,
+              mediaUrls, // NEW: Include generated images
               status: 'DRAFT',
               aiGenerated: true,
               aiModel: aiConfig.selectedModel,

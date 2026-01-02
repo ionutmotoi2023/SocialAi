@@ -317,3 +317,141 @@ export async function analyzeImage(imageUrl: string): Promise<string> {
     return 'Image analysis unavailable'
   }
 }
+
+// DALL-E 3 Image Generation
+export interface GenerateImageParams {
+  prompt: string
+  size?: '1024x1024' | '1024x1792' | '1792x1024'
+  quality?: 'standard' | 'hd'
+  style?: 'vivid' | 'natural'
+}
+
+export interface GeneratedImage {
+  url: string
+  revisedPrompt: string
+  size: string
+  quality: string
+}
+
+/**
+ * Generate image using DALL-E 3
+ */
+export async function generateImage(
+  params: GenerateImageParams
+): Promise<GeneratedImage> {
+  try {
+    const openai = getOpenAIClient()
+
+    const {
+      prompt,
+      size = '1024x1024',
+      quality = 'standard',
+      style = 'natural',
+    } = params
+
+    console.log('Generating image with DALL-E 3:', { prompt, size, quality, style })
+
+    const response = await openai.images.generate({
+      model: 'dall-e-3',
+      prompt,
+      n: 1,
+      size,
+      quality,
+      style,
+    })
+
+    const imageData = response.data[0]
+
+    if (!imageData?.url) {
+      throw new Error('No image URL returned from DALL-E 3')
+    }
+
+    return {
+      url: imageData.url,
+      revisedPrompt: imageData.revised_prompt || prompt,
+      size,
+      quality,
+    }
+  } catch (error: any) {
+    console.error('DALL-E 3 generation error:', error)
+    throw new Error(`Failed to generate image: ${error.message}`)
+  }
+}
+
+/**
+ * Generate image based on social media post content
+ */
+export async function generateImageForPost(
+  postContent: string,
+  options: {
+    platform?: 'linkedin' | 'twitter' | 'facebook'
+    style?: 'professional' | 'creative' | 'minimalist' | 'bold'
+  } = {}
+): Promise<GeneratedImage> {
+  const { platform = 'linkedin', style = 'professional' } = options
+
+  // Build optimized DALL-E prompt
+  let imagePrompt = ''
+
+  // Style guidelines
+  const styleGuides = {
+    professional: 'Clean, professional, business-appropriate visual. High quality, corporate aesthetic.',
+    creative: 'Creative, artistic, eye-catching design. Bold colors and unique composition.',
+    minimalist: 'Minimalist, simple, elegant design. Clean lines, subtle colors, modern aesthetic.',
+    bold: 'Bold, vibrant, attention-grabbing visual. Strong colors, dynamic composition.',
+  }
+
+  // Platform guidelines
+  const platformGuides = {
+    linkedin: 'Professional business context, suitable for LinkedIn audience.',
+    twitter: 'Engaging, shareable visual for Twitter/X.',
+    facebook: 'Friendly, relatable visual for Facebook audience.',
+  }
+
+  // Extract key themes from post content (simple keyword extraction)
+  const contentLower = postContent.toLowerCase()
+  const keywords: string[] = []
+
+  // Common business/tech keywords
+  const keywordMap: { [key: string]: string } = {
+    'ai': 'artificial intelligence technology',
+    'technology': 'modern technology',
+    'business': 'business professional',
+    'marketing': 'marketing strategy',
+    'data': 'data analytics',
+    'team': 'business team collaboration',
+    'success': 'success achievement',
+    'growth': 'business growth',
+    'innovation': 'innovation technology',
+    'leadership': 'leadership professional',
+  }
+
+  Object.entries(keywordMap).forEach(([keyword, phrase]) => {
+    if (contentLower.includes(keyword)) {
+      keywords.push(phrase)
+    }
+  })
+
+  // Build final prompt
+  if (keywords.length > 0) {
+    imagePrompt = `${styleGuides[style]} ${platformGuides[platform]} Theme: ${keywords.slice(0, 3).join(', ')}. `
+  } else {
+    // Fallback: generic business image
+    imagePrompt = `${styleGuides[style]} ${platformGuides[platform]} Generic professional business visual. `
+  }
+
+  imagePrompt += 'No text or words in the image. Photo-realistic quality.'
+
+  // Determine optimal size for platform
+  let size: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024'
+  if (platform === 'linkedin' || platform === 'facebook') {
+    size = '1024x1024' // Square for LinkedIn/Facebook
+  }
+
+  return generateImage({
+    prompt: imagePrompt,
+    size,
+    quality: 'standard',
+    style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
+  })
+}

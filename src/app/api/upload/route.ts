@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { uploadToCloudinary } from '@/lib/storage/cloudinary'
+import { applyWatermark } from '@/lib/image/processor'
 
 export async function POST(req: NextRequest) {
   try {
@@ -18,6 +19,7 @@ export async function POST(req: NextRequest) {
 
     const formData = await req.formData()
     const file = formData.get('file') as File
+    const applyBrandWatermark = formData.get('applyWatermark') !== 'false' // Default: true
 
     if (!file) {
       return NextResponse.json(
@@ -44,7 +46,27 @@ export async function POST(req: NextRequest) {
 
     // Convert file to buffer
     const bytes = await file.arrayBuffer()
-    const buffer = Buffer.from(bytes)
+    let buffer = Buffer.from(bytes)
+
+    // Apply watermark if enabled (default: true)
+    let watermarked = false
+    if (applyBrandWatermark) {
+      try {
+        console.log('Applying watermark to uploaded image...')
+        const processed = await applyWatermark(buffer, session.user.tenantId, {
+          position: 'bottom-right',
+          opacity: 0.7,
+          scale: 0.15,
+          margin: 20,
+        })
+        buffer = processed.buffer
+        watermarked = true
+        console.log('✅ Watermark applied successfully')
+      } catch (watermarkError) {
+        console.warn('Watermark application failed, uploading original:', watermarkError)
+        // Continue with original image if watermark fails
+      }
+    }
 
     // Upload to Cloudinary
     const result = await uploadToCloudinary(buffer, file.name)
@@ -60,6 +82,7 @@ export async function POST(req: NextRequest) {
       width: result.width,
       height: result.height,
       format: result.format,
+      watermarked, // NEW: Indicates if watermark was applied
     })
   } catch (error: any) {
     console.error('Upload error:', error)
