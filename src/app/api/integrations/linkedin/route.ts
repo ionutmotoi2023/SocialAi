@@ -37,6 +37,16 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    console.log('🔍 API /integrations/linkedin - Found integrations:', {
+      tenantId: session.user.tenantId,
+      count: integrations.length,
+      profiles: integrations.map(i => ({
+        id: i.id,
+        type: i.profileType,
+        name: i.profileType === 'COMPANY_PAGE' ? i.organizationName : i.profileName,
+      })),
+    })
+
     return NextResponse.json({ integrations })
   } catch (error) {
     console.error('Get LinkedIn integration error:', error)
