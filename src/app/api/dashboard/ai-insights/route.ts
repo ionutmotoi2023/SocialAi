@@ -35,7 +35,7 @@ export async function GET(req: NextRequest) {
       select: {
         status: true,
         aiConfidence: true,
-        aiProvider: true,
+        aiModel: true, // ✅ Fixed: Use aiModel instead of aiProvider
         createdAt: true,
         updatedAt: true,
       },
