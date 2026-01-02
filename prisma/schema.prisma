@@ -51,12 +51,12 @@ model User {
   name      String?
   avatar    String?
   role      UserRole  @default(VIEWER)
-  tenantId  String
+  tenantId  String?   // Optional for SUPER_ADMIN - they can access all tenants
   createdAt DateTime  @default(now())
   updatedAt DateTime  @updatedAt
   
   // Relations
-  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   posts       Post[]
   invitations Invitation[]
 

@@ -5,6 +5,20 @@ const prisma = new PrismaClient()
 async function main() {
   console.log('🌱 Starting database seed...')
 
+  // Create SUPER_ADMIN user (can manage all tenants)
+  const superAdmin = await prisma.user.upsert({
+    where: { email: 'superadmin@mindloop.ro' },
+    update: {},
+    create: {
+      email: 'superadmin@mindloop.ro',
+      name: 'Super Administrator',
+      role: 'SUPER_ADMIN',
+      tenantId: null, // SUPER_ADMIN has no tenant - can access all
+    },
+  })
+
+  console.log('✅ Created SUPER_ADMIN user:', superAdmin.email)
+
   // Create demo tenant
   const tenant = await prisma.tenant.upsert({
     where: { id: 'demo-tenant-id' },
@@ -116,8 +130,15 @@ async function main() {
   console.log('🎉 Database seed completed successfully!')
   console.log('')
   console.log('📧 Demo Login Credentials:')
-  console.log('   Email: admin@mindloop.ro')
-  console.log('   Password: (any password works in demo mode)')
+  console.log('   🔑 SUPER ADMIN')
+  console.log('      Email: superadmin@mindloop.ro')
+  console.log('      Password: (any password works in demo mode)')
+  console.log('      Access: Can manage ALL tenants')
+  console.log('')
+  console.log('   👤 TENANT ADMIN')
+  console.log('      Email: admin@mindloop.ro')
+  console.log('      Password: (any password works in demo mode)')
+  console.log('      Access: Can manage AI MINDLOOP SRL tenant')
   console.log('')
   console.log('🚀 Run: npm run dev')
   console.log('   Then visit: http://localhost:3000')

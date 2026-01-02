@@ -17,7 +17,8 @@ import {
   ChevronRight,
   Menu,
   X,
-  Home
+  Home,
+  Shield
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -89,6 +90,13 @@ export function DashboardSidebar() {
       href: '/dashboard/settings',
       icon: Settings,
     },
+    // Super Admin only
+    ...(session?.user?.role === 'SUPER_ADMIN' ? [{
+      name: 'Super Admin',
+      href: '/dashboard/super-admin',
+      icon: Shield,
+      badge: 'ADMIN',
+    }] : []),
   ]
 
   // Main navigation items for bottom bar (4 most important)
