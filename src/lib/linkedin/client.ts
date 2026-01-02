@@ -16,10 +16,12 @@ export interface LinkedInShareResponse {
 export class LinkedInClient {
   private accessToken: string
   private tenantId: string
+  private authorUrn?: string // Organization URN for company pages
 
-  constructor(accessToken: string, tenantId: string) {
+  constructor(accessToken: string, tenantId: string, authorUrn?: string) {
     this.accessToken = accessToken
     this.tenantId = tenantId
+    this.authorUrn = authorUrn // If provided, use this for posting (company page)
   }
 
   // Get LinkedIn profile information (OpenID Connect UserInfo endpoint)
@@ -54,8 +56,19 @@ export class LinkedInClient {
   // Share text post to LinkedIn
   async shareTextPost(text: string): Promise<LinkedInShareResponse> {
     try {
-      const profile = await this.getProfile()
-      const authorUrn = `urn:li:person:${profile.id}`
+      // Determine author URN (organization or personal)
+      let authorUrn: string
+      
+      if (this.authorUrn) {
+        // Use provided organization URN for company pages
+        authorUrn = this.authorUrn
+        console.log('🏬 Posting as Organization:', authorUrn)
+      } else {
+        // Get personal profile for personal posts
+        const profile = await this.getProfile()
+        authorUrn = `urn:li:person:${profile.id}`
+        console.log('👤 Posting as Person:', authorUrn)
+      }
 
       const shareData = {
         author: authorUrn,
@@ -103,14 +116,23 @@ export class LinkedInClient {
   // Register image upload with LinkedIn and get asset URN
   private async registerImageUpload(imageUrl: string): Promise<{ uploadUrl: string; asset: string }> {
     try {
-      const profile = await this.getProfile()
-      const authorUrn = `urn:li:person:${profile.id}`
+      // Determine owner URN (organization or personal)
+      let ownerUrn: string
+      
+      if (this.authorUrn) {
+        // Use organization URN for company pages
+        ownerUrn = this.authorUrn
+      } else {
+        // Get personal profile
+        const profile = await this.getProfile()
+        ownerUrn = `urn:li:person:${profile.id}`
+      }
 
       // Step 1: Register upload
       const registerData = {
         registerUploadRequest: {
           recipes: ['urn:li:digitalmediaRecipe:feedshare-image'],
-          owner: authorUrn,
+          owner: ownerUrn,
           serviceRelationships: [
             {
               relationshipType: 'OWNER',
@@ -181,8 +203,19 @@ export class LinkedInClient {
     try {
       console.log('📸 LinkedIn Image Post - Starting:', { textLength: text.length, imageUrl })
 
-      const profile = await this.getProfile()
-      const authorUrn = `urn:li:person:${profile.id}`
+      // Determine author URN (organization or personal)
+      let authorUrn: string
+      
+      if (this.authorUrn) {
+        // Use provided organization URN for company pages
+        authorUrn = this.authorUrn
+        console.log('🏬 Posting image as Organization:', authorUrn)
+      } else {
+        // Get personal profile for personal posts
+        const profile = await this.getProfile()
+        authorUrn = `urn:li:person:${profile.id}`
+        console.log('👤 Posting image as Person:', authorUrn)
+      }
 
       // Register and upload image to LinkedIn
       const { asset } = await this.registerImageUpload(imageUrl)

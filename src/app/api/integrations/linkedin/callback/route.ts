@@ -141,18 +141,12 @@ export async function GET(req: NextRequest) {
       picture: profileData.picture,
     })
 
-    // Determine profile type based on organizations
-    const profileType = organizations.length > 0 ? 'COMPANY_PAGE' : 'PERSONAL'
-    const organizationData = organizations[0] ? {
-      organizationId: organizations[0]['organizationalTarget~']?.id,
-      organizationName: organizations[0]['organizationalTarget~']?.localizedName,
-      organizationUrn: organizations[0].organizationalTarget,
-    } : {}
-
-    console.log('🔍 LinkedIn Callback - Profile type detected:', {
-      profileType,
-      hasOrganizations: organizations.length > 0,
-      ...organizationData,
+    console.log('🔍 LinkedIn Callback - Organizations found:', {
+      count: organizations.length,
+      orgs: organizations.map((org: any) => ({
+        id: org['organizationalTarget~']?.id,
+        name: org['organizationalTarget~']?.localizedName,
+      })),
     })
 
     // Calculate expiration date
@@ -161,10 +155,12 @@ export async function GET(req: NextRequest) {
     console.log('💾 LinkedIn Callback - Saving to database...', {
       tenantId,
       linkedinId: profileData.sub,
+      organizationsCount: organizations.length,
       expiresAt: expiresAt.toISOString(),
     })
 
-    // Save or update integration (OpenID Connect format with profile type detection)
+    // STEP 1: Save Personal Profile Integration
+    console.log('💾 Saving Personal Profile...')
     await prisma.linkedInIntegration.upsert({
       where: { 
         tenantId_linkedinId: {
@@ -180,10 +176,10 @@ export async function GET(req: NextRequest) {
         linkedinId: profileData.sub,
         profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
         profileImage: profileData.picture,
-        profileType: profileType as any,
-        organizationId: organizationData.organizationId || null,
-        organizationName: organizationData.organizationName || null,
-        organizationUrn: organizationData.organizationUrn || null,
+        profileType: 'PERSONAL',
+        organizationId: null,
+        organizationName: null,
+        organizationUrn: null,
         isActive: true,
       },
       update: {
@@ -192,15 +188,78 @@ export async function GET(req: NextRequest) {
         expiresAt,
         profileName: profileData.name || `${profileData.given_name || ''} ${profileData.family_name || ''}`.trim(),
         profileImage: profileData.picture,
-        profileType: profileType as any,
-        organizationId: organizationData.organizationId || null,
-        organizationName: organizationData.organizationName || null,
-        organizationUrn: organizationData.organizationUrn || null,
+        profileType: 'PERSONAL',
+        organizationId: null,
+        organizationName: null,
+        organizationUrn: null,
         isActive: true,
       },
     })
+    console.log('✅ Personal Profile saved')
 
-    console.log('✅ LinkedIn Callback - Successfully connected!')
+    // STEP 2: Save Each Organization as Separate Integration
+    if (organizations.length > 0) {
+      console.log('💾 Saving Organizations...', organizations.length)
+      
+      for (const org of organizations) {
+        const orgId = org['organizationalTarget~']?.id
+        const orgName = org['organizationalTarget~']?.localizedName
+        const orgUrn = org.organizationalTarget
+
+        if (!orgId) {
+          console.log('⚠️ Skipping organization without ID')
+          continue
+        }
+
+        console.log('💾 Saving organization:', { orgId, orgName })
+
+        // Use organization ID as linkedinId for company pages
+        await prisma.linkedInIntegration.upsert({
+          where: { 
+            tenantId_linkedinId: {
+              tenantId,
+              linkedinId: orgId, // Use org ID as unique identifier
+            }
+          },
+          create: {
+            tenantId,
+            accessToken: access_token,
+            refreshToken: tokenData.refresh_token || null,
+            expiresAt,
+            linkedinId: orgId,
+            profileName: orgName,
+            profileImage: profileData.picture, // Use user's profile image as fallback
+            profileType: 'COMPANY_PAGE',
+            organizationId: orgId,
+            organizationName: orgName,
+            organizationUrn: orgUrn,
+            isActive: true,
+          },
+          update: {
+            accessToken: access_token,
+            refreshToken: tokenData.refresh_token || null,
+            expiresAt,
+            profileName: orgName,
+            profileImage: profileData.picture,
+            profileType: 'COMPANY_PAGE',
+            organizationId: orgId,
+            organizationName: orgName,
+            organizationUrn: orgUrn,
+            isActive: true,
+          },
+        })
+        
+        console.log('✅ Organization saved:', orgName)
+      }
+      
+      console.log('✅ All organizations saved:', organizations.length)
+    }
+
+    console.log('✅ LinkedIn Callback - Successfully connected!', {
+      personal: 1,
+      organizations: organizations.length,
+      total: 1 + organizations.length,
+    })
 
     // Return success page that closes popup
     return new NextResponse(`
