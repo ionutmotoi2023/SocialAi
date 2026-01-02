@@ -60,23 +60,63 @@ export async function generateContent(
     // Build system prompt
     const systemPrompt = buildSystemPrompt(params)
 
+    // Check if there are media URLs (images/videos)
+    const hasMedia = params.mediaUrls && params.mediaUrls.length > 0
+
     // Generate content with GPT-4
     const openai = getOpenAIClient()
-    const response = await openai.chat.completions.create({
-      model: 'gpt-4-turbo-preview',
-      messages: [
+    
+    // If media is present, use GPT-4 Vision (gpt-4o is the latest model with vision)
+    let response
+    if (hasMedia) {
+      // Build message content with images
+      const userContent: any[] = [
         {
-          role: 'system',
-          content: systemPrompt,
-        },
-        {
-          role: 'user',
-          content: params.prompt,
-        },
-      ],
-      temperature: 0.7,
-      max_tokens: getMaxTokens(params.postLength),
-    })
+          type: 'text',
+          text: `${systemPrompt}\n\nUser request: ${params.prompt}`,
+        }
+      ]
+
+      // Add all media URLs as image_url entries
+      params.mediaUrls!.forEach(url => {
+        userContent.push({
+          type: 'image_url',
+          image_url: {
+            url: url,
+            detail: 'high' // Use 'high' for better image analysis
+          },
+        })
+      })
+
+      response = await openai.chat.completions.create({
+        model: 'gpt-4o', // gpt-4o has vision capabilities and is more recent than gpt-4-vision-preview
+        messages: [
+          {
+            role: 'user',
+            content: userContent,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: getMaxTokens(params.postLength),
+      })
+    } else {
+      // No media - use standard text model
+      response = await openai.chat.completions.create({
+        model: 'gpt-4-turbo-preview',
+        messages: [
+          {
+            role: 'system',
+            content: systemPrompt,
+          },
+          {
+            role: 'user',
+            content: params.prompt,
+          },
+        ],
+        temperature: 0.7,
+        max_tokens: getMaxTokens(params.postLength),
+      })
+    }
 
     const generatedText = response.choices[0]?.message?.content || ''
     const generationTime = Date.now() - startTime
@@ -91,7 +131,7 @@ export async function generateContent(
       text: generatedText,
       hashtags,
       confidence,
-      model: 'gpt-4-turbo',
+      model: hasMedia ? 'gpt-4o-vision' : 'gpt-4-turbo',
       generationTime,
       suggestions: generateSuggestions(generatedText),
     }
@@ -237,7 +277,7 @@ export async function analyzeImage(imageUrl: string): Promise<string> {
   try {
     const openai = getOpenAIClient()
     const response = await openai.chat.completions.create({
-      model: 'gpt-4-vision-preview',
+      model: 'gpt-4o', // Using gpt-4o which has better vision capabilities
       messages: [
         {
           role: 'user',
@@ -250,6 +290,7 @@ export async function analyzeImage(imageUrl: string): Promise<string> {
               type: 'image_url',
               image_url: {
                 url: imageUrl,
+                detail: 'high', // Request high detail analysis
               },
             },
           ],
