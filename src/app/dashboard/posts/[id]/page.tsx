@@ -1,7 +1,5 @@
 'use client'
 
-export const dynamic = 'force-dynamic'
-
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
@@ -85,18 +83,30 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
 
   const fetchLinkedInIntegrations = async () => {
     try {
+      console.log('🔍 Fetching LinkedIn integrations...')
       const response = await fetch('/api/integrations/linkedin')
+      console.log('📡 Response status:', response.status, response.ok)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('📦 API Response:', data)
+        
         const integrations = data.integrations || []
+        console.log('✅ Integrations found:', integrations.length, integrations)
+        
         setLinkedInIntegrations(integrations)
         // Auto-select first active integration
         if (integrations.length > 0 && !selectedIntegrationId) {
           setSelectedIntegrationId(integrations[0].id)
+          console.log('✅ Auto-selected:', integrations[0].id, integrations[0].profileName || integrations[0].organizationName)
+        } else if (integrations.length === 0) {
+          console.log('⚠️ No integrations found! Please connect LinkedIn in Settings.')
         }
+      } else {
+        console.error('❌ API request failed:', response.status)
       }
     } catch (error) {
-      console.error('Failed to fetch LinkedIn integrations:', error)
+      console.error('❌ Failed to fetch LinkedIn integrations:', error)
     }
   }
 

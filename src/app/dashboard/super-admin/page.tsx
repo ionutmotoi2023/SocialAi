@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import { 
   Building2, Users, FileText, Rss, Image as ImageIcon, Shield, 
   Plus, Edit, Trash2, Eye, Search, ChevronRight, TrendingUp,
-  Calendar, Globe, Briefcase
+  Calendar, Globe, Briefcase, CreditCard
 } from 'lucide-react'
 
 interface TenantStats {
