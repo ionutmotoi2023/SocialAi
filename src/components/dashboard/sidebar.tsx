@@ -167,7 +167,11 @@ export function DashboardSidebar() {
           {/* Tenant Info */}
           <div className="p-4 border-b border-gray-200 bg-gray-50">
             <div className="text-xs font-semibold text-gray-500 mb-1">WORKSPACE</div>
-            <div className="font-medium text-sm truncate">{session?.user.tenant.name}</div>
+            <div className="font-medium text-sm truncate">
+              {session?.user.role === 'SUPER_ADMIN' 
+                ? 'Platform Admin' 
+                : session?.user.tenant?.name || 'No Workspace'}
+            </div>
             <Badge variant="secondary" className="mt-2 text-xs">
               {session?.user.role.replace('_', ' ')}
             </Badge>
@@ -302,7 +306,11 @@ export function DashboardSidebar() {
         {/* Tenant Info */}
         <div className="p-4 border-b border-gray-200 bg-gray-50">
           <div className="text-xs font-semibold text-gray-500 mb-1">WORKSPACE</div>
-          <div className="font-medium text-sm truncate">{session?.user.tenant.name}</div>
+          <div className="font-medium text-sm truncate">
+            {session?.user.role === 'SUPER_ADMIN' 
+              ? 'Platform Admin' 
+              : session?.user.tenant?.name || 'No Workspace'}
+          </div>
           <Badge variant="secondary" className="mt-2 text-xs">
             {session?.user.role.replace('_', ' ')}
           </Badge>
