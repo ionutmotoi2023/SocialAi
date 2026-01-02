@@ -21,18 +21,20 @@ model Tenant {
   description String?
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
-  
+
   // Relations
-  users           User[]
-  aiConfigs       AIConfig[]
-  autoPilotConfigs AutoPilotConfig[]
-  brandAssets     BrandAsset[]
-  posts           Post[]
-  contentSources  ContentSource[]
+  users                User[]
+  aiConfigs            AIConfig[]
+  autoPilotConfigs     AutoPilotConfig[]
+  brandAssets          BrandAsset[]
+  posts                Post[]
+  contentSources       ContentSource[]
   linkedinIntegrations LinkedInIntegration[]
-  invitations     Invitation[]
-  aiLearningData  AILearningData[]
-  brandTrainingData BrandTrainingData[]
+  invitations          Invitation[]
+  aiLearningData       AILearningData[]
+  brandTrainingData    BrandTrainingData[]
+  subscriptions        Subscription[]
+  invoices             Invoice[]
 
   @@map("tenants")
 }
@@ -46,17 +48,17 @@ enum UserRole {
 }
 
 model User {
-  id        String    @id @default(cuid())
-  email     String    @unique
+  id        String   @id @default(cuid())
+  email     String   @unique
   name      String?
   avatar    String?
-  role      UserRole  @default(VIEWER)
-  tenantId  String?   // Optional for SUPER_ADMIN - they can access all tenants
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
-  
+  role      UserRole @default(VIEWER)
+  tenantId  String? // Optional for SUPER_ADMIN - they can access all tenants
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
-  tenant      Tenant? @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   posts       Post[]
   invitations Invitation[]
 
@@ -65,29 +67,29 @@ model User {
 
 // AI Configuration per tenant
 model AIConfig {
-  id              String   @id @default(cuid())
-  tenantId        String   @unique
-  selectedModel   String   @default("gpt-4-turbo") // gpt-4-turbo, claude-3-opus, gemini-pro
-  brandVoice      String?  // Custom brand voice instructions
-  tonePreference  String   @default("professional") // professional, casual, enthusiastic, technical
-  postLength      String   @default("medium") // short, medium, long
-  hashtagStrategy String   @default("moderate") // minimal, moderate, extensive
-  includeEmojis   Boolean  @default(true)
-  includeCTA      Boolean  @default(true)
-  
+  id              String  @id @default(cuid())
+  tenantId        String  @unique
+  selectedModel   String  @default("gpt-4-turbo") // gpt-4-turbo, claude-3-opus, gemini-pro
+  brandVoice      String? // Custom brand voice instructions
+  tonePreference  String  @default("professional") // professional, casual, enthusiastic, technical
+  postLength      String  @default("medium") // short, medium, long
+  hashtagStrategy String  @default("moderate") // minimal, moderate, extensive
+  includeEmojis   Boolean @default(true)
+  includeCTA      Boolean @default(true)
+
   // Brand Variables for dynamic replacement in AI prompts
-  companyName     String?  // e.g., "TechFlow Solutions"
-  companyTagline  String?  // e.g., "Empowering businesses with AI"
-  targetAudience  String?  // e.g., "B2B SaaS companies, tech startups"
-  keyProducts     String?  // e.g., "AI Analytics Platform, Customer Insights Dashboard"
-  uniqueValue     String?  // e.g., "40% faster implementation, 24/7 support"
-  foundedYear     String?  // e.g., "2020"
-  teamSize        String?  // e.g., "50-100 employees"
-  headquarters    String?  // e.g., "San Francisco, CA"
-  
-  createdAt       DateTime @default(now())
-  updatedAt       DateTime @updatedAt
-  
+  companyName    String? // e.g., "TechFlow Solutions"
+  companyTagline String? // e.g., "Empowering businesses with AI"
+  targetAudience String? // e.g., "B2B SaaS companies, tech startups"
+  keyProducts    String? // e.g., "AI Analytics Platform, Customer Insights Dashboard"
+  uniqueValue    String? // e.g., "40% faster implementation, 24/7 support"
+  foundedYear    String? // e.g., "2020"
+  teamSize       String? // e.g., "50-100 employees"
+  headquarters   String? // e.g., "San Francisco, CA"
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -96,17 +98,17 @@ model AIConfig {
 
 // Auto-Pilot configuration per tenant
 model AutoPilotConfig {
-  id                    String   @id @default(cuid())
-  tenantId              String   @unique
-  enabled               Boolean  @default(false)
-  postsPerWeek          Int      @default(5)
-  confidenceThreshold   Float    @default(0.8)  // 0.0 to 1.0
-  autoSchedule          Boolean  @default(true)
-  preferredTimes        String[] // ["09:00", "12:00", "17:00"]
-  topics                String[] // ["AI", "Technology", "Business"]
-  createdAt             DateTime @default(now())
-  updatedAt             DateTime @updatedAt
-  
+  id                  String   @id @default(cuid())
+  tenantId            String   @unique
+  enabled             Boolean  @default(false)
+  postsPerWeek        Int      @default(5)
+  confidenceThreshold Float    @default(0.8) // 0.0 to 1.0
+  autoSchedule        Boolean  @default(true)
+  preferredTimes      String[] // ["09:00", "12:00", "17:00"]
+  topics              String[] // ["AI", "Technology", "Business"]
+  createdAt           DateTime @default(now())
+  updatedAt           DateTime @updatedAt
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -115,18 +117,18 @@ model AutoPilotConfig {
 
 // Brand assets (logos, watermarks)
 model BrandAsset {
-  id               String   @id @default(cuid())
-  tenantId         String
-  name             String
-  type             String   // logo, watermark, template
-  fileUrl          String
-  fileSize         Int?
-  mimeType         String?
-  isDefault        Boolean  @default(false)
-  watermarkSettings Json?   // position, opacity, size settings
-  createdAt        DateTime @default(now())
-  updatedAt        DateTime @updatedAt
-  
+  id                String   @id @default(cuid())
+  tenantId          String
+  name              String
+  type              String // logo, watermark, template
+  fileUrl           String
+  fileSize          Int?
+  mimeType          String?
+  isDefault         Boolean  @default(false)
+  watermarkSettings Json? // position, opacity, size settings
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -135,17 +137,17 @@ model BrandAsset {
 
 // Content sources (RSS, competitor monitoring, news)
 model ContentSource {
-  id          String   @id @default(cuid())
+  id          String    @id @default(cuid())
   tenantId    String
   name        String
-  type        String   // rss, website, competitor, news
+  type        String // rss, website, competitor, news
   url         String
-  isActive    Boolean  @default(true)
+  isActive    Boolean   @default(true)
   lastChecked DateTime?
-  settings    Json?    // scraping settings, keywords, etc.
-  createdAt   DateTime @default(now())
-  updatedAt   DateTime @updatedAt
-  
+  settings    Json? // scraping settings, keywords, etc.
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   posts  Post[] // Posts inspired by this source
@@ -166,7 +168,7 @@ model LinkedInIntegration {
   isActive     Boolean   @default(true)
   createdAt    DateTime  @default(now())
   updatedAt    DateTime  @updatedAt
-  
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -184,39 +186,39 @@ enum PostStatus {
 }
 
 model Post {
-  id                String     @id @default(cuid())
-  tenantId          String
-  userId            String
-  title             String?
-  content           String
-  mediaUrls         String[]   // Array of image/video URLs
-  scheduledAt       DateTime?
-  publishedAt       DateTime?
-  status            PostStatus @default(DRAFT)
-  platform          String     @default("linkedin")
-  linkedinPostUrl   String?    // URL of published post on LinkedIn
-  
+  id              String     @id @default(cuid())
+  tenantId        String
+  userId          String
+  title           String?
+  content         String
+  mediaUrls       String[] // Array of image/video URLs
+  scheduledAt     DateTime?
+  publishedAt     DateTime?
+  status          PostStatus @default(DRAFT)
+  platform        String     @default("linkedin")
+  linkedinPostUrl String? // URL of published post on LinkedIn
+
   // AI Generation metadata
-  aiGenerated       Boolean    @default(false)
-  aiModel           String?
-  aiConfidence      Float?     // 0.0 to 1.0
-  originalPrompt    String?
-  generationTime    Int?       // SECONDS (not milliseconds)
-  
+  aiGenerated    Boolean @default(false)
+  aiModel        String?
+  aiConfidence   Float? // 0.0 to 1.0
+  originalPrompt String?
+  generationTime Int? // SECONDS (not milliseconds)
+
   // User feedback for learning
   userApproved      Boolean?
-  userModifications String?    // What user changed
-  engagementScore   Float?     // Actual performance
-  
+  userModifications String? // What user changed
+  engagementScore   Float? // Actual performance
+
   // RSS Source Tracking (NEW)
-  contentSourceId   String?    // Link to ContentSource that inspired this
-  rssItemTitle      String?    // Original RSS item title
-  rssItemUrl        String?    // Original RSS item URL
-  rssItemDate       DateTime?  // When RSS item was published
-  
-  createdAt         DateTime   @default(now())
-  updatedAt         DateTime   @updatedAt
-  
+  contentSourceId String? // Link to ContentSource that inspired this
+  rssItemTitle    String? // Original RSS item title
+  rssItemUrl      String? // Original RSS item URL
+  rssItemDate     DateTime? // When RSS item was published
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
   // Relations
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
@@ -227,19 +229,19 @@ model Post {
 
 // AI Learning data for continuous improvement
 model AILearningData {
-  id                String   @id @default(cuid())
-  tenantId          String
-  postId            String?  // Related post if applicable
-  contentSourceId   String?  // Related content source if RSS inspiration
-  interactionType   String   // user_edit, approval, rejection, regeneration, content_inspiration
-  originalContent   String?
-  modifiedContent   String?
-  userFeedback      String?
-  improvementScore  Float?   // How much this improved AI accuracy
-  patternDetected   String?  // What pattern was learned
-  rssItemUrl        String?  // URL of RSS item (for content_inspiration)
-  createdAt         DateTime @default(now())
-  
+  id               String   @id @default(cuid())
+  tenantId         String
+  postId           String? // Related post if applicable
+  contentSourceId  String? // Related content source if RSS inspiration
+  interactionType  String // user_edit, approval, rejection, regeneration, content_inspiration
+  originalContent  String?
+  modifiedContent  String?
+  userFeedback     String?
+  improvementScore Float? // How much this improved AI accuracy
+  patternDetected  String? // What pattern was learned
+  rssItemUrl       String? // URL of RSS item (for content_inspiration)
+  createdAt        DateTime @default(now())
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
@@ -264,10 +266,10 @@ model Invitation {
   expiresAt DateTime
   createdAt DateTime         @default(now())
   updatedAt DateTime         @updatedAt
-  
+
   // Relations
-  tenant    Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
-  inviter   User   @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
+  tenant  Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  inviter User   @relation(fields: [invitedBy], references: [id], onDelete: Cascade)
 
   @@unique([email, tenantId])
   @@map("invitations")
@@ -279,12 +281,127 @@ model BrandTrainingData {
   tenantId    String
   sourceUrl   String
   content     String   @db.Text
-  category    String   // 'about', 'products', 'services', 'values', 'tone', 'general'
+  category    String // 'about', 'products', 'services', 'values', 'tone', 'general'
   lastUpdated DateTime @default(now()) @updatedAt
   createdAt   DateTime @default(now())
-  
+
   // Relations
   tenant Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
 
   @@map("brand_training_data")
+}
+
+// Subscription plans enum
+enum SubscriptionPlan {
+  FREE
+  STARTER
+  PROFESSIONAL
+  ENTERPRISE
+}
+
+enum SubscriptionStatus {
+  ACTIVE
+  TRIAL
+  CANCELLED
+  EXPIRED
+  PAST_DUE
+}
+
+// Subscription management for SaaS billing
+model Subscription {
+  id       String             @id @default(cuid())
+  tenantId String             @unique
+  plan     SubscriptionPlan   @default(FREE)
+  status   SubscriptionStatus @default(TRIAL)
+
+  // Billing cycle
+  startDate       DateTime  @default(now())
+  endDate         DateTime?
+  trialEndDate    DateTime?
+  lastBillingDate DateTime?
+  nextBillingDate DateTime?
+
+  // Stripe integration (optional - for production)
+  stripeCustomerId      String?
+  stripeSubscriptionId  String?
+  stripePriceId         String?
+  stripePaymentMethodId String?
+
+  // Usage limits per plan
+  postsLimit     Int @default(5) // FREE: 5, STARTER: 50, PRO: 200, ENTERPRISE: 9999
+  usersLimit     Int @default(1) // FREE: 1, STARTER: 3, PRO: 10, ENTERPRISE: 9999
+  aiCreditsLimit Int @default(10) // FREE: 10, STARTER: 500, PRO: 2000, ENTERPRISE: 9999
+
+  // Current usage (reset monthly)
+  postsUsed     Int @default(0)
+  usersUsed     Int @default(0)
+  aiCreditsUsed Int @default(0)
+
+  // Usage reset tracking
+  usageResetAt DateTime @default(now())
+
+  // Billing amount (in cents, e.g., 2900 = $29.00)
+  monthlyAmount Int    @default(0) // FREE: 0, STARTER: 2900, PRO: 9900, ENTERPRISE: 29900
+  currency      String @default("USD")
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant   Tenant    @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  invoices Invoice[]
+
+  @@map("subscriptions")
+}
+
+// Invoice status enum
+enum InvoiceStatus {
+  DRAFT
+  PENDING
+  PAID
+  FAILED
+  REFUNDED
+  CANCELLED
+}
+
+// Invoices for billing history
+model Invoice {
+  id             String @id @default(cuid())
+  tenantId       String
+  subscriptionId String
+
+  // Invoice details
+  invoiceNumber String        @unique // INV-2024-0001
+  amount        Int // Amount in cents
+  currency      String        @default("USD")
+  status        InvoiceStatus @default(PENDING)
+
+  // Billing period
+  periodStart DateTime
+  periodEnd   DateTime
+  dueDate     DateTime
+  paidAt      DateTime?
+
+  // Stripe integration
+  stripeInvoiceId String?
+  stripeChargeId  String?
+  invoiceUrl      String? // Stripe hosted invoice URL
+
+  // Payment details
+  paymentMethod  String? // 'card', 'bank_transfer', etc.
+  lastFourDigits String? // Last 4 digits of card
+
+  // Line items (stored as JSON for flexibility)
+  lineItems Json? // [{ description: "Pro Plan", quantity: 1, amount: 9900 }]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  // Relations
+  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
+
+  @@index([tenantId])
+  @@index([subscriptionId])
+  @@map("invoices")
 }
