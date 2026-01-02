@@ -11,6 +11,7 @@ import { RecentActivity } from '@/components/dashboard/recent-activity'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Bot, Calendar, FileText, Image, Zap, TrendingUp } from 'lucide-react'
+import { UsageWarning, useUsageWarnings } from '@/components/billing/usage-warning'
 
 interface AIInsights {
   approvalRate: number
@@ -21,6 +22,7 @@ interface AIInsights {
 export default function DashboardPage() {
   const { data: session, status } = useSession()
   const router = useRouter()
+  const { warnings, loading: warningsLoading } = useUsageWarnings()
   const [aiInsights, setAiInsights] = useState<AIInsights>({
     approvalRate: 0,
     avgGenerationTime: 0,
@@ -100,6 +102,15 @@ export default function DashboardPage() {
 
       {/* Content */}
       <main className="flex-1 overflow-y-auto p-6">
+          {/* Usage Warnings */}
+          {!warningsLoading && warnings.length > 0 && (
+            <div className="mb-6 space-y-4">
+              {warnings.map((warning, index) => (
+                <UsageWarning key={`${warning.quotaType}-${index}`} {...warning} />
+              ))}
+            </div>
+          )}
+
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">

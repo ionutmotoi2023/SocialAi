@@ -10,6 +10,7 @@ import { Badge } from '@/components/ui/badge'
 import { FileText, Calendar, CheckCircle, Clock, Plus, Filter, ThumbsUp, ThumbsDown, Send, Edit } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { useToast } from '@/hooks/use-toast'
+import { UsageWarning, useUsageWarnings } from '@/components/billing/usage-warning'
 
 interface Post {
   id: string
@@ -32,6 +33,7 @@ interface Post {
 export default function PostsPage() {
   const router = useRouter()
   const { toast } = useToast()
+  const { warnings, loading: warningsLoading } = useUsageWarnings()
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
@@ -195,6 +197,17 @@ export default function PostsPage() {
             </Button>
           </div>
         </header>
+
+        {/* Usage Warnings */}
+        {!warningsLoading && warnings.length > 0 && warnings.some(w => w.quotaType === 'posts') && (
+          <div className="px-4 sm:px-6 py-4">
+            {warnings
+              .filter(w => w.quotaType === 'posts')
+              .map((warning, index) => (
+                <UsageWarning key={`posts-warning-${index}`} {...warning} />
+              ))}
+          </div>
+        )}
 
         {/* Filters - Mobile scrollable */}
         <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
