@@ -46,6 +46,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   const [scheduledDate, setScheduledDate] = useState('')
   const [scheduledTime, setScheduledTime] = useState('')
   const [isPublishing, setIsPublishing] = useState(false)
+  const [isScheduling, setIsScheduling] = useState(false)
 
   useEffect(() => {
     fetchPost()
@@ -121,6 +122,111 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
       })
     } finally {
       setIsSaving(false)
+    }
+  }
+
+  const handlePublishNow = async () => {
+    if (!confirm('Publish this post to LinkedIn now?')) {
+      return
+    }
+
+    setIsPublishing(true)
+
+    try {
+      // First, save any changes
+      await handleSave()
+
+      // Then publish
+      const response = await fetch(`/api/posts/${params.id}/publish`, {
+        method: 'POST',
+      })
+
+      if (!response.ok) {
+        const errorData = await response.json()
+        throw new Error(errorData.error || 'Failed to publish post')
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Post published to LinkedIn successfully',
+      })
+
+      // Refresh post data
+      await fetchPost()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to publish post',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsPublishing(false)
+    }
+  }
+
+  const handleSchedule = async () => {
+    setIsScheduling(true)
+
+    try {
+      // Validate schedule date/time
+      if (!scheduledDate || !scheduledTime) {
+        toast({
+          title: 'Missing schedule',
+          description: 'Please select both date and time to schedule',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      const scheduledAt = new Date(`${scheduledDate}T${scheduledTime}`)
+      
+      // Check if date is in the future
+      if (scheduledAt <= new Date()) {
+        toast({
+          title: 'Invalid schedule',
+          description: 'Please select a future date and time',
+          variant: 'destructive',
+        })
+        return
+      }
+
+      // Save with scheduled status
+      const response = await fetch(`/api/posts/${params.id}`, {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          title: editedTitle,
+          content: editedContent,
+          mediaUrls,
+          scheduledAt: scheduledAt.toISOString(),
+          status: 'SCHEDULED',
+        }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to schedule post')
+      }
+
+      toast({
+        title: 'Success',
+        description: `Post scheduled for ${format(scheduledAt, 'PPp')}`,
+      })
+
+      // Refresh post data
+      await fetchPost()
+      
+      // Redirect to calendar
+      router.push('/dashboard/calendar')
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to schedule post',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsScheduling(false)
     }
   }
 
@@ -216,6 +322,59 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
             </div>
             <div className="flex items-center gap-3">
               {getStatusBadge(post.status)}
+              
+              {/* Draft Actions - Show Publish/Schedule buttons */}
+              {post.status === 'DRAFT' && (
+                <>
+                  <Button
+                    variant="outline"
+                    onClick={handleSchedule}
+                    disabled={isScheduling || isSaving}
+                  >
+                    {isScheduling ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Scheduling...
+                      </>
+                    ) : (
+                      <>
+                        <Calendar className="mr-2 h-4 w-4" />
+                        Schedule
+                      </>
+                    )}
+                  </Button>
+                  
+                  <Button
+                    onClick={handlePublishNow}
+                    disabled={isPublishing || isSaving}
+                    className="bg-green-600 hover:bg-green-700"
+                  >
+                    {isPublishing ? (
+                      <>
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        Publishing...
+                      </>
+                    ) : (
+                      <>
+                        <Send className="mr-2 h-4 w-4" />
+                        Publish Now
+                      </>
+                    )}
+                  </Button>
+                </>
+              )}
+              
+              {/* Scheduled Post Actions */}
+              {post.status === 'SCHEDULED' && (
+                <Button
+                  variant="outline"
+                  onClick={() => router.push('/dashboard/calendar')}
+                >
+                  <Calendar className="mr-2 h-4 w-4" />
+                  View in Calendar
+                </Button>
+              )}
+              
               <Button
                 variant="outline"
                 onClick={handleDelete}
