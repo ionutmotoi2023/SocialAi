@@ -9,14 +9,32 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
+    // 🔍 LOG: Session info
+    console.log('🔗 LinkedIn Auth - Session Info:', {
+      userId: session?.user?.id,
+      userEmail: session?.user?.email,
+      tenantId: session?.user?.tenantId,
+      role: session?.user?.role,
+    })
+
     if (!session?.user) {
+      console.error('❌ LinkedIn Auth - No session found')
       return NextResponse.redirect(new URL('/login', req.url))
     }
 
     const clientId = process.env.LINKEDIN_CLIENT_ID
     const redirectUri = `${process.env.NEXTAUTH_URL}/api/integrations/linkedin/callback`
 
+    // 🔍 LOG: Environment variables
+    console.log('🔗 LinkedIn Auth - Config:', {
+      clientId: clientId ? `${clientId.substring(0, 8)}...` : 'MISSING',
+      redirectUri,
+      nextAuthUrl: process.env.NEXTAUTH_URL,
+      hasClientSecret: !!process.env.LINKEDIN_CLIENT_SECRET,
+    })
+
     if (!clientId) {
+      console.error('❌ LinkedIn Auth - Client ID not configured')
       return NextResponse.json(
         { error: 'LinkedIn Client ID not configured' },
         { status: 500 }
@@ -30,6 +48,9 @@ export async function GET(req: NextRequest) {
     linkedInAuthUrl.searchParams.append('redirect_uri', redirectUri)
     linkedInAuthUrl.searchParams.append('state', session.user.tenantId)
     linkedInAuthUrl.searchParams.append('scope', 'r_liteprofile r_emailaddress w_member_social')
+
+    // 🔍 LOG: Final OAuth URL
+    console.log('✅ LinkedIn Auth - Redirecting to:', linkedInAuthUrl.toString())
 
     return NextResponse.redirect(linkedInAuthUrl.toString())
   } catch (error) {

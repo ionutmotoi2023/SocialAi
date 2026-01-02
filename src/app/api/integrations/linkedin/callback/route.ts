@@ -10,8 +10,19 @@ export async function GET(req: NextRequest) {
     const code = searchParams.get('code')
     const state = searchParams.get('state') // tenantId
     const error = searchParams.get('error')
+    const errorDescription = searchParams.get('error_description')
+
+    // 🔍 LOG: Callback parameters
+    console.log('🔙 LinkedIn Callback - Received:', {
+      hasCode: !!code,
+      codePreview: code ? `${code.substring(0, 10)}...` : null,
+      state: state,
+      error: error,
+      errorDescription: errorDescription,
+    })
 
     if (error) {
+      console.error('❌ LinkedIn Callback - OAuth error:', { error, errorDescription })
       return new NextResponse(`
         <html>
           <body>
@@ -27,10 +38,13 @@ export async function GET(req: NextRequest) {
     }
 
     if (!code || !state) {
+      console.error('❌ LinkedIn Callback - Missing parameters:', { code: !!code, state: !!state })
       throw new Error('Missing code or state parameter')
     }
 
     const tenantId = state
+
+    console.log('🔍 LinkedIn Callback - Exchanging code for token...')
 
     // Exchange code for access token
     const tokenResponse = await fetch('https://www.linkedin.com/oauth/v2/accessToken', {
@@ -47,13 +61,28 @@ export async function GET(req: NextRequest) {
       }),
     })
 
+    // 🔍 LOG: Token response status
+    console.log('🔍 LinkedIn Callback - Token response:', {
+      status: tokenResponse.status,
+      ok: tokenResponse.ok,
+    })
+
     if (!tokenResponse.ok) {
       const errorData = await tokenResponse.json()
+      console.error('❌ LinkedIn Callback - Token exchange failed:', errorData)
       throw new Error(`Token exchange failed: ${JSON.stringify(errorData)}`)
     }
 
     const tokenData = await tokenResponse.json()
     const { access_token, expires_in } = tokenData
+
+    console.log('✅ LinkedIn Callback - Token received:', {
+      hasAccessToken: !!access_token,
+      expiresIn: expires_in,
+      hasRefreshToken: !!tokenData.refresh_token,
+    })
+
+    console.log('🔍 LinkedIn Callback - Fetching profile...')
 
     // Fetch LinkedIn profile
     const profileResponse = await fetch('https://api.linkedin.com/v2/me', {
@@ -63,14 +92,36 @@ export async function GET(req: NextRequest) {
       },
     })
 
+    // 🔍 LOG: Profile response
+    console.log('🔍 LinkedIn Callback - Profile response:', {
+      status: profileResponse.status,
+      ok: profileResponse.ok,
+    })
+
     if (!profileResponse.ok) {
+      const errorText = await profileResponse.text()
+      console.error('❌ LinkedIn Callback - Profile fetch failed:', errorText)
       throw new Error('Failed to fetch LinkedIn profile')
     }
 
     const profileData = await profileResponse.json()
 
+    // 🔍 LOG: Profile data received
+    console.log('✅ LinkedIn Callback - Profile data:', {
+      linkedinId: profileData.id,
+      firstName: profileData.localizedFirstName,
+      lastName: profileData.localizedLastName,
+      hasProfilePicture: !!profileData.profilePicture,
+    })
+
     // Calculate expiration date
     const expiresAt = new Date(Date.now() + (expires_in || 60 * 24 * 60 * 60) * 1000)
+
+    console.log('💾 LinkedIn Callback - Saving to database...', {
+      tenantId,
+      linkedinId: profileData.id,
+      expiresAt: expiresAt.toISOString(),
+    })
 
     // Save or update integration
     await prisma.linkedInIntegration.upsert({
@@ -95,6 +146,8 @@ export async function GET(req: NextRequest) {
         isActive: true,
       },
     })
+
+    console.log('✅ LinkedIn Callback - Successfully connected!')
 
     // Return success page that closes popup
     return new NextResponse(`
