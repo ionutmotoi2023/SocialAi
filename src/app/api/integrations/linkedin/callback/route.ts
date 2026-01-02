@@ -112,10 +112,16 @@ export async function GET(req: NextRequest) {
         orgs: organizations.map((org: any) => ({
           id: org['organizationalTarget~']?.id,
           name: org['organizationalTarget~']?.localizedName,
+          role: org.role, // Log user's role on this organization
+          state: org.state, // Log state (APPROVED, PENDING, etc)
         })),
       })
     } else {
-      console.log('⚠️ LinkedIn Callback - Could not fetch organizations (might be personal profile only)')
+      const errorText = await orgsResponse.text()
+      console.log('⚠️ LinkedIn Callback - Could not fetch organizations:', {
+        status: orgsResponse.status,
+        error: errorText,
+      })
     }
 
     // 🔍 LOG: Profile response
@@ -205,13 +211,31 @@ export async function GET(req: NextRequest) {
         const orgId = org['organizationalTarget~']?.id
         const orgName = org['organizationalTarget~']?.localizedName
         const orgUrn = org.organizationalTarget
+        const orgRole = org.role // ADMINISTRATOR, EDITOR, etc
+        const orgState = org.state // APPROVED, PENDING, etc
 
         if (!orgId) {
           console.log('⚠️ Skipping organization without ID')
           continue
         }
 
-        console.log('💾 Saving organization:', { orgId, orgName })
+        console.log('💾 Saving organization:', { 
+          orgId, 
+          orgName, 
+          role: orgRole,
+          state: orgState,
+          urn: orgUrn,
+        })
+
+        // ⚠️ Warn if user doesn't have ADMINISTRATOR role
+        if (orgRole !== 'ADMINISTRATOR') {
+          console.warn('⚠️ WARNING: User does not have ADMINISTRATOR role on organization:', {
+            orgName,
+            currentRole: orgRole,
+            required: 'ADMINISTRATOR',
+            impact: 'Posting to this organization may fail!',
+          })
+        }
 
         // Use organization ID as linkedinId for company pages
         await prisma.linkedInIntegration.upsert({
