@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { FileText, Calendar, CheckCircle, TrendingUp, Zap, Clock } from 'lucide-react'
 
@@ -14,6 +15,7 @@ interface Stats {
 }
 
 export function StatsCards() {
+  const router = useRouter()
   const [stats, setStats] = useState<Stats>({
     totalPosts: 0,
     scheduledPosts: 0,
@@ -49,6 +51,7 @@ export function StatsCards() {
       icon: FileText,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
+      href: '/dashboard/posts', // ✅ Link to all posts
     },
     {
       title: 'Scheduled',
@@ -56,6 +59,7 @@ export function StatsCards() {
       icon: Calendar,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',
+      href: '/dashboard/calendar', // ✅ Link to calendar
     },
     {
       title: 'Published',
@@ -63,6 +67,7 @@ export function StatsCards() {
       icon: CheckCircle,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
+      href: '/dashboard/posts?status=PUBLISHED', // ✅ Link to published posts filter
     },
     {
       title: 'AI Generated',
@@ -70,6 +75,7 @@ export function StatsCards() {
       icon: Zap,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
+      href: '/dashboard/autopilot', // ✅ Link to autopilot
     },
     {
       title: 'AI Confidence',
@@ -77,6 +83,7 @@ export function StatsCards() {
       icon: TrendingUp,
       color: 'text-indigo-600',
       bgColor: 'bg-indigo-50',
+      href: '/dashboard/analytics', // ✅ Link to analytics
     },
     {
       title: 'Time Saved',
@@ -84,6 +91,7 @@ export function StatsCards() {
       icon: Clock,
       color: 'text-pink-600',
       bgColor: 'bg-pink-50',
+      href: '/dashboard/analytics', // ✅ Link to analytics
     },
   ]
 
@@ -106,7 +114,11 @@ export function StatsCards() {
       {cards.map((card, index) => {
         const Icon = card.icon
         return (
-          <Card key={index} className="hover:shadow-lg transition-shadow">
+          <Card 
+            key={index} 
+            className="hover:shadow-lg transition-shadow cursor-pointer"
+            onClick={() => router.push(card.href)}
+          >
             <CardContent className="p-6">
               <div className="flex items-start justify-between">
                 <div>
