@@ -116,7 +116,7 @@ export async function POST(req: NextRequest) {
         data: {
           tenantId: session.user.tenantId,
           userId: session.user.id,
-          title: prompt.substring(0, 100),
+          title: generatedContent.title, // ✅ NEW: Use AI-generated title
           content: generatedContent.text,
           mediaUrls,
           status: 'DRAFT',

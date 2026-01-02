@@ -84,7 +84,7 @@ export default function CreatePostPage() {
         },
         body: JSON.stringify({
           content: editedContent,
-          title: prompt.substring(0, 100),
+          title: generatedContent?.title || prompt.substring(0, 100), // ✅ Use AI-generated title
           status: 'DRAFT',
           mediaUrls,
           aiGenerated: true,

@@ -54,6 +54,7 @@ export interface GenerateContentParams {
 }
 
 export interface GeneratedContent {
+  title: string // NEW: Auto-generated title for the post
   text: string
   hashtags: string[]
   confidence: number
@@ -142,7 +143,11 @@ export async function generateContent(
     // Calculate confidence score based on various factors
     const confidence = calculateConfidence(response, generatedText)
 
+    // Generate title from content (extract first sentence or create summary)
+    const title = generateTitleFromContent(generatedText, params.prompt)
+
     return {
+      title, // NEW: Auto-generated title
       text: generatedText,
       hashtags,
       confidence,
@@ -323,6 +328,32 @@ function generateSuggestions(text: string): string[] {
   }
 
   return suggestions
+}
+
+/**
+ * Generate a concise title from post content
+ */
+function generateTitleFromContent(content: string, prompt: string): string {
+  // Remove hashtags and emojis for cleaner title extraction
+  const cleanContent = content
+    .replace(/#\w+/g, '') // Remove hashtags
+    .replace(/[\u{1F600}-\u{1F64F}\u{1F300}-\u{1F5FF}\u{1F680}-\u{1F6FF}\u{1F1E0}-\u{1F1FF}\u{2600}-\u{26FF}\u{2700}-\u{27BF}]/gu, '') // Remove emojis
+    .trim()
+
+  // Extract first sentence or first 100 chars
+  const firstSentence = cleanContent.split(/[\.\!\?]\s/)[0]
+  
+  if (firstSentence && firstSentence.length > 10 && firstSentence.length <= 100) {
+    return firstSentence.trim()
+  }
+  
+  // If first sentence is too long or short, use first 80 chars
+  if (cleanContent.length > 80) {
+    return cleanContent.substring(0, 77).trim() + '...'
+  }
+  
+  // Fallback to cleaned content or prompt
+  return cleanContent || prompt.substring(0, 100)
 }
 
 // Analyze image content using GPT-4 Vision

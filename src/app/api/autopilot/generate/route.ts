@@ -176,6 +176,7 @@ export async function POST(request: NextRequest) {
             data: {
               tenantId: session.user.tenantId,
               userId: session.user.id,
+              title: result.title, // ✅ NEW: Use AI-generated title
               content: result.text,
               mediaUrls, // NEW: Include generated images
               status: 'APPROVED', // Auto-approve high confidence
@@ -199,6 +200,7 @@ export async function POST(request: NextRequest) {
             data: {
               tenantId: session.user.tenantId,
               userId: session.user.id,
+              title: result.title, // ✅ NEW: Use AI-generated title
               content: result.text,
               mediaUrls, // NEW: Include generated images
               status: 'DRAFT',
