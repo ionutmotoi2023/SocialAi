@@ -103,10 +103,23 @@ export async function POST(request: NextRequest) {
           ? rssInspiration[i % rssInspiration.length]
           : null
 
+        // Build brand variables from aiConfig
+        const brandVariables = {
+          companyName: aiConfig.companyName || tenant?.name,
+          companyTagline: aiConfig.companyTagline || undefined,
+          targetAudience: aiConfig.targetAudience || undefined,
+          keyProducts: aiConfig.keyProducts || undefined,
+          uniqueValue: aiConfig.uniqueValue || undefined,
+          foundedYear: aiConfig.foundedYear || undefined,
+          teamSize: aiConfig.teamSize || undefined,
+          headquarters: aiConfig.headquarters || undefined,
+        }
+
         const startTime = Date.now() // Start timer
         const result = await generateContent({
           prompt: prompts[i],
           brandVoice: aiConfig.brandVoice || undefined,
+          brandVariables, // NEW: Pass brand variables
           tone: aiConfig.tonePreference as 'professional' | 'casual' | 'enthusiastic' | 'technical',
           includeHashtags: true,
           includeCTA: aiConfig.includeCTA

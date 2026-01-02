@@ -13,8 +13,9 @@ import { useToast } from '@/hooks/use-toast'
 import { BrandTrainingTab } from '@/components/settings/brand-training-tab'
 import { ContentSourcesTab } from '@/components/settings/content-sources-tab'
 import { BrandAssetsTab } from '@/components/settings/brand-assets-tab'
+import BrandVariablesTab from '@/components/settings/brand-variables-tab'
 
-type TabType = 'ai' | 'brand' | 'content' | 'assets'
+type TabType = 'ai' | 'variables' | 'brand' | 'content' | 'assets'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -112,6 +113,17 @@ export default function SettingsPage() {
                 AI Settings
               </button>
               <button
+                onClick={() => setActiveTab('variables')}
+                className={`py-4 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'variables'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Sparkles className="h-4 w-4 inline mr-2" />
+                Brand Variables
+              </button>
+              <button
                 onClick={() => setActiveTab('brand')}
                 className={`py-4 px-4 font-medium text-sm border-b-2 transition-colors ${
                   activeTab === 'brand'
@@ -154,12 +166,14 @@ export default function SettingsPage() {
             <div>
               <h1 className="text-2xl font-bold text-gray-900">
                 {activeTab === 'ai' && 'AI Settings'}
+                {activeTab === 'variables' && 'Brand Variables'}
                 {activeTab === 'brand' && 'Brand Training'}
                 {activeTab === 'content' && 'Content Sources'}
                 {activeTab === 'assets' && 'Brand Assets'}
               </h1>
               <p className="text-sm text-gray-600">
                 {activeTab === 'ai' && 'Configure your AI and platform preferences'}
+                {activeTab === 'variables' && 'Define specific brand details for AI-generated content'}
                 {activeTab === 'brand' && 'Train AI on your brand voice and values'}
                 {activeTab === 'content' && 'Manage RSS feeds and content sources'}
                 {activeTab === 'assets' && 'Manage your logos, watermarks, and brand images'}
@@ -183,6 +197,7 @@ export default function SettingsPage() {
         {/* Content */}
         <main className="flex-1 overflow-y-auto p-6">
           <div className="max-w-4xl mx-auto">
+            {activeTab === 'variables' && <BrandVariablesTab />}
             {activeTab === 'assets' && <BrandAssetsTab />}
             {activeTab === 'ai' && (
               <div className="space-y-6">

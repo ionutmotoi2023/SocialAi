@@ -82,12 +82,25 @@ export async function POST(req: NextRequest) {
       brandContext += `\nUse this information to align the content with the brand's voice, values, and messaging.\n`
     }
 
+    // Build brand variables from aiConfig
+    const brandVariables = {
+      companyName: aiConfig.companyName || tenant?.name,
+      companyTagline: aiConfig.companyTagline || undefined,
+      targetAudience: aiConfig.targetAudience || undefined,
+      keyProducts: aiConfig.keyProducts || undefined,
+      uniqueValue: aiConfig.uniqueValue || undefined,
+      foundedYear: aiConfig.foundedYear || undefined,
+      teamSize: aiConfig.teamSize || undefined,
+      headquarters: aiConfig.headquarters || undefined,
+    }
+
     // Generate content using OpenAI with enhanced context
     const generatedContent = await generateContent({
       prompt,
       mediaUrls,
       brandVoice: aiConfig.brandVoice || undefined,
       brandContext, // NEW: Pass brand context
+      brandVariables, // NEW: Pass brand variables for dynamic replacement
       tone: aiConfig.tonePreference as any,
       postLength: aiConfig.postLength as any,
       includeHashtags: includeHashtags && aiConfig.includeEmojis,

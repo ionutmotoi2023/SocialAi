@@ -35,6 +35,16 @@ export interface GenerateContentParams {
   mediaUrls?: string[]
   brandVoice?: string
   brandContext?: string // NEW: Brand training data context
+  brandVariables?: {
+    companyName?: string
+    companyTagline?: string
+    targetAudience?: string
+    keyProducts?: string
+    uniqueValue?: string
+    foundedYear?: string
+    teamSize?: string
+    headquarters?: string
+  }
   tone?: 'professional' | 'casual' | 'enthusiastic' | 'technical'
   postLength?: 'short' | 'medium' | 'long'
   includeHashtags?: boolean
@@ -150,6 +160,7 @@ function buildSystemPrompt(params: GenerateContentParams): string {
   const {
     brandVoice,
     brandContext, // NEW
+    brandVariables, // NEW: Brand variables for dynamic replacement
     tone = 'professional',
     postLength = 'medium',
     includeHashtags = true,
@@ -159,6 +170,36 @@ function buildSystemPrompt(params: GenerateContentParams): string {
   } = params
 
   let prompt = `You are an expert social media content creator specializing in ${platform} posts.`
+
+  // Add brand variables for dynamic content replacement
+  if (brandVariables) {
+    prompt += `\n\nBRAND VARIABLES (use these specific details in your content):`
+    if (brandVariables.companyName) {
+      prompt += `\nCompany Name: ${brandVariables.companyName} (ALWAYS use this exact name, never use placeholders like [Your Company Name])`
+    }
+    if (brandVariables.companyTagline) {
+      prompt += `\nTagline: ${brandVariables.companyTagline}`
+    }
+    if (brandVariables.targetAudience) {
+      prompt += `\nTarget Audience: ${brandVariables.targetAudience}`
+    }
+    if (brandVariables.keyProducts) {
+      prompt += `\nKey Products/Services: ${brandVariables.keyProducts}`
+    }
+    if (brandVariables.uniqueValue) {
+      prompt += `\nUnique Value Proposition: ${brandVariables.uniqueValue}`
+    }
+    if (brandVariables.foundedYear) {
+      prompt += `\nFounded: ${brandVariables.foundedYear}`
+    }
+    if (brandVariables.teamSize) {
+      prompt += `\nTeam Size: ${brandVariables.teamSize}`
+    }
+    if (brandVariables.headquarters) {
+      prompt += `\nHeadquarters: ${brandVariables.headquarters}`
+    }
+    prompt += `\n\nIMPORTANT: When mentioning the company, ALWAYS use "${brandVariables.companyName || 'our company'}" instead of generic placeholders. Be specific and authentic.`
+  }
 
   // Add brand context if available
   if (brandContext) {
@@ -193,7 +234,7 @@ function buildSystemPrompt(params: GenerateContentParams): string {
     prompt += `\nUse 1-3 relevant emojis to enhance engagement (don't overdo it).`
   }
 
-  prompt += `\n\nImportant: Create engaging, authentic content that resonates with the target audience. Avoid generic or corporate jargon.`
+  prompt += `\n\nImportant: Create engaging, authentic content that resonates with the target audience. Avoid generic or corporate jargon. Never use placeholders like [Company Name], [Product Name], etc. - always use the specific brand details provided above.`
 
   return prompt
 }
