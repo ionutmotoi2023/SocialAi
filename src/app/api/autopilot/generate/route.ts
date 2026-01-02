@@ -179,7 +179,7 @@ export async function POST(request: NextRequest) {
               title: result.title, // ✅ NEW: Use AI-generated title
               content: result.text,
               mediaUrls, // NEW: Include generated images
-              status: 'APPROVED', // Auto-approve high confidence
+              status: 'DRAFT', // Changed from APPROVED - user should review before publishing
               aiGenerated: true,
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,

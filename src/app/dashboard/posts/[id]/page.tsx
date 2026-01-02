@@ -276,6 +276,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   const getStatusBadge = (status: string) => {
     const config: Record<string, { color: string; label: string }> = {
       DRAFT: { color: 'bg-gray-500', label: 'Draft' },
+      APPROVED: { color: 'bg-blue-500', label: 'Approved' },
       SCHEDULED: { color: 'bg-purple-500', label: 'Scheduled' },
       PUBLISHED: { color: 'bg-green-500', label: 'Published' },
       FAILED: { color: 'bg-red-500', label: 'Failed' },
@@ -333,8 +334,8 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-3">
               {getStatusBadge(post.status)}
               
-              {/* Draft Actions - Show Publish/Schedule buttons */}
-              {post.status === 'DRAFT' && (
+              {/* Draft and Approved Actions - Show Publish/Schedule buttons */}
+              {(post.status === 'DRAFT' || post.status === 'APPROVED') && (
                 <>
                   <Button
                     variant="outline"
