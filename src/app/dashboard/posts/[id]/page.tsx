@@ -174,6 +174,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   }
 
   const handlePublishNow = async () => {
+    // ✅ Check if integration is selected
     if (!selectedIntegrationId) {
       toast({
         title: 'No destination selected',
@@ -188,15 +189,42 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
       ? selectedIntegration.organizationName 
       : selectedIntegration?.profileName
 
-    if (!confirm(`Publish this post to ${destinationName} now?`)) {
+    // ✅ Combined logic: Check if SCHEDULED + destination name
+    const confirmMessage = post?.status === 'SCHEDULED'
+      ? `This post is scheduled for later. Publish it to ${destinationName} now instead?`
+      : `Publish this post to ${destinationName} now?`
+    
+    if (!confirm(confirmMessage)) {
       return
     }
 
     setIsPublishing(true)
 
     try {
-      // First, save any changes
-      await handleSave()
+      // First, save any changes and clear scheduling if post was SCHEDULED
+      if (post?.status === 'SCHEDULED') {
+        // Clear scheduled time to prevent duplicate publishing by cron
+        const response = await fetch(`/api/posts/${params.id}`, {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            title: editedTitle,
+            content: editedContent,
+            mediaUrls,
+            scheduledAt: null, // ✅ Clear scheduled time
+            status: 'APPROVED', // Move to APPROVED before publishing
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to update post status')
+        }
+      } else {
+        // For non-scheduled posts, just save changes
+        await handleSave()
+      }
 
       // Then publish with selected integration
       const response = await fetch(`/api/posts/${params.id}/publish`, {
@@ -333,6 +361,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
   const getStatusBadge = (status: string) => {
     const config: Record<string, { color: string; label: string }> = {
       DRAFT: { color: 'bg-gray-500', label: 'Draft' },
+      PENDING_APPROVAL: { color: 'bg-yellow-500', label: 'Pending Approval' },
       APPROVED: { color: 'bg-blue-500', label: 'Approved' },
       SCHEDULED: { color: 'bg-purple-500', label: 'Scheduled' },
       PUBLISHED: { color: 'bg-green-500', label: 'Published' },
@@ -391,8 +420,11 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
             <div className="flex items-center gap-3">
               {getStatusBadge(post.status)}
               
-              {/* Draft and Approved Actions - Show Publish/Schedule buttons */}
-              {(post.status === 'DRAFT' || post.status === 'APPROVED') && (
+              {/* Show Publish/Schedule buttons for posts that are not yet published */}
+              {(post.status === 'DRAFT' || 
+                post.status === 'APPROVED' || 
+                post.status === 'PENDING_APPROVAL' ||
+                post.status === 'SCHEDULED') && (
                 <>
                   <Button
                     variant="outline"
@@ -407,7 +439,7 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                     ) : (
                       <>
                         <Calendar className="mr-2 h-4 w-4" />
-                        Schedule
+                        {post.status === 'SCHEDULED' ? 'Reschedule' : 'Schedule'}
                       </>
                     )}
                   </Button>
@@ -460,22 +492,11 @@ export default function PostDetailPage({ params }: { params: { id: string } }) {
                     ) : (
                       <>
                         <Send className="mr-2 h-4 w-4" />
-                        Publish Now
+                        {post.status === 'SCHEDULED' ? 'Publish Now Instead' : 'Publish Now'}
                       </>
                     )}
                   </Button>
                 </>
-              )}
-              
-              {/* Scheduled Post Actions */}
-              {post.status === 'SCHEDULED' && (
-                <Button
-                  variant="outline"
-                  onClick={() => router.push('/dashboard/calendar')}
-                >
-                  <Calendar className="mr-2 h-4 w-4" />
-                  View in Calendar
-                </Button>
               )}
               
               <Button
