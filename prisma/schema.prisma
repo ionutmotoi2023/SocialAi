@@ -87,6 +87,9 @@ model AIConfig {
   teamSize       String? // e.g., "50-100 employees"
   headquarters   String? // e.g., "San Francisco, CA"
 
+  // Additional AI Instructions - Custom context for AI to consider
+  additionalInstructions String? @db.Text // Free-form text for custom AI instructions
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
@@ -329,12 +332,22 @@ model Subscription {
   plan     SubscriptionPlan   @default(FREE)
   status   SubscriptionStatus @default(TRIAL)
 
-  // Billing cycle
+  // Billing cycle and amount
+  amount        Float  @default(0) // Amount in dollars (e.g., 29.00 for $29)
+  billingCycle  String @default("monthly") // "monthly" or "yearly"
+  
+  // Current billing period
+  currentPeriodStart DateTime @default(now())
+  currentPeriodEnd   DateTime?
+  trialEndsAt        DateTime?
+
+  // Legacy fields (keep for backward compatibility)
   startDate       DateTime  @default(now())
   endDate         DateTime?
   trialEndDate    DateTime?
   lastBillingDate DateTime?
   nextBillingDate DateTime?
+  canceledAt      DateTime?
 
   // Stripe integration (optional - for production)
   stripeCustomerId      String?
@@ -355,7 +368,7 @@ model Subscription {
   // Usage reset tracking
   usageResetAt DateTime @default(now())
 
-  // Billing amount (in cents, e.g., 2900 = $29.00)
+  // Billing amount (in cents, e.g., 2900 = $29.00) - DEPRECATED, use 'amount' instead
   monthlyAmount Int    @default(0) // FREE: 0, STARTER: 2900, PRO: 9900, ENTERPRISE: 29900
   currency      String @default("USD")
 
@@ -371,9 +384,11 @@ model Subscription {
 
 // Invoice status enum
 enum InvoiceStatus {
-  DRAFT
   PENDING
   PAID
+  OVERDUE
+  VOID
+  DRAFT
   FAILED
   REFUNDED
   CANCELLED
@@ -382,18 +397,16 @@ enum InvoiceStatus {
 // Invoices for billing history
 model Invoice {
   id             String @id @default(cuid())
-  tenantId       String
   subscriptionId String
 
   // Invoice details
   invoiceNumber String        @unique // INV-2024-0001
-  amount        Int // Amount in cents
+  amount        Float // Amount in dollars (e.g., 99.00 for $99)
   currency      String        @default("USD")
   status        InvoiceStatus @default(PENDING)
+  description   String? // Optional description
 
   // Billing period
-  periodStart DateTime
-  periodEnd   DateTime
   dueDate     DateTime
   paidAt      DateTime?
 
@@ -413,10 +426,8 @@ model Invoice {
   updatedAt DateTime @updatedAt
 
   // Relations
-  tenant       Tenant       @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   subscription Subscription @relation(fields: [subscriptionId], references: [id], onDelete: Cascade)
 
-  @@index([tenantId])
   @@index([subscriptionId])
   @@map("invoices")
 }

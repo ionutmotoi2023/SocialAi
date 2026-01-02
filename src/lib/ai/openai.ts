@@ -35,6 +35,7 @@ export interface GenerateContentParams {
   mediaUrls?: string[]
   brandVoice?: string
   brandContext?: string // NEW: Brand training data context
+  additionalInstructions?: string // NEW: Custom user instructions for AI
   brandVariables?: {
     companyName?: string
     companyTagline?: string
@@ -165,6 +166,7 @@ function buildSystemPrompt(params: GenerateContentParams): string {
   const {
     brandVoice,
     brandContext, // NEW
+    additionalInstructions, // NEW: Custom user instructions
     brandVariables, // NEW: Brand variables for dynamic replacement
     tone = 'professional',
     postLength = 'medium',
@@ -214,6 +216,11 @@ function buildSystemPrompt(params: GenerateContentParams): string {
 
   if (brandVoice) {
     prompt += `\n\nBrand Voice Guidelines: ${brandVoice}`
+  }
+
+  // Add custom user instructions if provided
+  if (additionalInstructions) {
+    prompt += `\n\nADDITIONAL INSTRUCTIONS (IMPORTANT - always follow these):\n${additionalInstructions}`
   }
 
   prompt += `\n\nTone: ${tone}`

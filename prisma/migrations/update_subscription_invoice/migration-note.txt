@@ -1,0 +1,20 @@
+Migration: update_subscription_invoice
+Date: 2026-01-02
+Description: Update Subscription and Invoice models for better billing support
+
+Changes:
+1. Subscription model:
+   - Added amount field (Float, dollars)
+   - Added billingCycle field (monthly/yearly)
+   - Added currentPeriodStart, currentPeriodEnd, trialEndsAt
+   - Added canceledAt for tracking cancellations
+
+2. Invoice model:
+   - Changed amount from Int (cents) to Float (dollars)
+   - Removed tenantId field
+   - Added description field
+
+3. InvoiceStatus enum:
+   - Added OVERDUE and VOID statuses
+
+Deployment: Apply via prisma db push on Railway

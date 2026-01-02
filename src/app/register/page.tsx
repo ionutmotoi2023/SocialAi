@@ -2,20 +2,30 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState } from 'react'
-import { useRouter } from 'next/navigation'
+import { useState, useEffect } from 'react'
+import { useRouter, useSearchParams } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
-import { Bot, Loader2 } from 'lucide-react'
+import { Badge } from '@/components/ui/badge'
+import { Bot, Loader2, Check } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
+import { SUBSCRIPTION_PLANS, SubscriptionPlanType } from '@/lib/subscription-plans'
 
 export default function RegisterPage() {
   const router = useRouter()
+  const searchParams = useSearchParams()
   const { toast } = useToast()
   const [isLoading, setIsLoading] = useState(false)
+  
+  // Get plan from URL query param
+  const planParam = searchParams.get('plan') as SubscriptionPlanType || 'FREE'
+  const selectedPlan = ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'].includes(planParam) 
+    ? planParam 
+    : 'FREE'
+  
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -51,6 +61,7 @@ export default function RegisterPage() {
           password: formData.password,
           companyName: formData.companyName,
           website: formData.website,
+          plan: selectedPlan, // Include selected plan
         }),
       })
 
@@ -104,6 +115,25 @@ export default function RegisterPage() {
             <CardDescription>
               Start automating your social media with AI
             </CardDescription>
+            {selectedPlan !== 'FREE' && (
+              <div className="mt-4 p-4 bg-primary/10 rounded-lg border border-primary/20">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="font-semibold text-sm">Selected Plan: {SUBSCRIPTION_PLANS[selectedPlan].name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {SUBSCRIPTION_PLANS[selectedPlan].priceDisplay} • 14-day free trial
+                    </p>
+                  </div>
+                  <Badge variant="secondary">
+                    <Check className="h-3 w-3 mr-1" />
+                    {selectedPlan}
+                  </Badge>
+                </div>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Your subscription will start after the 14-day trial period ends.
+                </p>
+              </div>
+            )}
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit} className="space-y-4">

@@ -3,12 +3,13 @@ export const dynamic = 'force-dynamic'
 import { NextRequest, NextResponse } from 'next/server'
 import { prisma } from '@/lib/prisma'
 import { hash } from 'bcryptjs'
+import { getPlanLimits, getPlanPrice } from '@/lib/subscription-plans'
 
 
 export async function POST(req: NextRequest) {
   try {
     const body = await req.json()
-    const { name, email, password, companyName, website } = body
+    const { name, email, password, companyName, website, plan } = body
 
     // Validate required fields
     if (!name || !email || !password || !companyName) {
@@ -29,6 +30,15 @@ export async function POST(req: NextRequest) {
         { status: 409 }
       )
     }
+
+    // Determine the plan (default to FREE if not specified)
+    const selectedPlan = plan && ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'].includes(plan) 
+      ? plan 
+      : 'FREE'
+
+    // Get plan limits and pricing
+    const planLimits = getPlanLimits(selectedPlan)
+    const planPrice = getPlanPrice(selectedPlan)
 
     // Create tenant (company)
     const tenant = await prisma.tenant.create({
@@ -68,6 +78,35 @@ export async function POST(req: NextRequest) {
         hashtagStrategy: 'moderate',
         includeEmojis: true,
         includeCTA: true,
+      },
+    })
+
+    // Create subscription with 14-day trial
+    const trialEndDate = new Date()
+    trialEndDate.setDate(trialEndDate.getDate() + 14) // 14 days trial
+
+    const currentPeriodStart = new Date()
+    const currentPeriodEnd = new Date()
+    currentPeriodEnd.setMonth(currentPeriodEnd.getMonth() + 1) // 1 month from now
+
+    await prisma.subscription.create({
+      data: {
+        tenantId: tenant.id,
+        plan: selectedPlan,
+        status: 'TRIAL',
+        amount: planPrice / 100, // Convert cents to dollars
+        billingCycle: 'monthly',
+        currentPeriodStart: currentPeriodStart,
+        currentPeriodEnd: currentPeriodEnd,
+        trialEndsAt: trialEndDate,
+        // Set limits based on plan
+        postsLimit: planLimits.posts,
+        usersLimit: planLimits.users,
+        aiCreditsLimit: planLimits.aiCredits,
+        // Initialize usage at 0
+        postsUsed: 0,
+        usersUsed: 1, // Count the admin user
+        aiCreditsUsed: 0,
       },
     })
 
