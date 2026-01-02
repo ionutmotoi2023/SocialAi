@@ -21,6 +21,7 @@ interface AutoPilotConfig {
   autoSchedule: boolean
   preferredTimes: string[]
   topics: string[]
+  imageCount: number // ✅ NEW: Number of images per post
 }
 
 export default function AutoPilotPage() {
@@ -32,7 +33,8 @@ export default function AutoPilotPage() {
     confidenceThreshold: 0.8,
     autoSchedule: true,
     preferredTimes: ['09:00', '12:00', '17:00'],
-    topics: []
+    topics: [],
+    imageCount: 1, // ✅ NEW: Default 1 image per post
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -121,7 +123,11 @@ export default function AutoPilotPage() {
         body: JSON.stringify({
           count: config.postsPerWeek,
           confidenceThreshold: config.confidenceThreshold,
-          topics: config.topics
+          topics: config.topics,
+          autoSchedule: config.autoSchedule, // ✅ NEW: Send autoSchedule flag
+          generateImages: true, // Generate images by default
+          imageCount: config.imageCount, // ✅ NEW: Number of images per post
+          imageStyle: 'professional',
         })
       })
 
@@ -129,7 +135,9 @@ export default function AutoPilotPage() {
         const data = await response.json()
         toast({
           title: 'Bulk generation complete',
-          description: `Generated ${data.created} posts successfully`
+          description: config.autoSchedule 
+            ? `Generated and scheduled ${data.created} posts automatically`
+            : `Generated ${data.created} posts for review`,
         })
       }
     } catch (error) {
@@ -161,16 +169,16 @@ export default function AutoPilotPage() {
   }
 
   return (
-    <div className="container mx-auto py-8 space-y-8">
+    <div className="container mx-auto py-4 sm:py-8 px-4 sm:px-6 space-y-4 sm:space-y-8">
       {/* Header */}
       <div className="flex flex-col gap-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
           <div>
-            <h1 className="text-3xl font-bold flex items-center gap-2">
-              <Zap className="h-8 w-8 text-yellow-500" />
+            <h1 className="text-2xl sm:text-3xl font-bold flex items-center gap-2">
+              <Zap className="h-6 w-6 sm:h-8 sm:w-8 text-yellow-500" />
               Auto-Pilot Mode
             </h1>
-            <p className="text-muted-foreground mt-2">
+            <p className="text-sm sm:text-base text-muted-foreground mt-2">
               Let AI automatically generate and schedule your content
             </p>
           </div>
@@ -178,7 +186,7 @@ export default function AutoPilotPage() {
           <Button
             size="lg"
             onClick={toggleAutoPilot}
-            className={config.enabled ? 'bg-green-500 hover:bg-green-600' : ''}
+            className={`${config.enabled ? 'bg-green-500 hover:bg-green-600' : ''} w-full sm:w-auto`}
           >
             {config.enabled ? (
               <>
@@ -194,14 +202,14 @@ export default function AutoPilotPage() {
           </Button>
         </div>
 
-        {/* Quick Actions - Moved to top for better visibility */}
-        <div className="flex flex-col sm:flex-row gap-3">
+        {/* Quick Actions - Mobile optimized */}
+        <div className="flex flex-col gap-3">
           <Button 
             size="lg" 
             variant="secondary"
             onClick={generateBulk}
             disabled={generating}
-            className="flex-1 bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg"
+            className="w-full bg-gradient-to-r from-purple-500 to-blue-500 hover:from-purple-600 hover:to-blue-600 text-white shadow-lg"
           >
             <Sparkles className="h-5 w-5 mr-2" />
             {generating ? 'Generating...' : 'Generate Posts Now'}
@@ -211,7 +219,7 @@ export default function AutoPilotPage() {
             size="lg" 
             onClick={saveConfig} 
             disabled={saving} 
-            className="flex-1"
+            className="w-full"
             variant="outline"
           >
             <SettingsIcon className="h-5 w-5 mr-2" />
@@ -257,7 +265,7 @@ export default function AutoPilotPage() {
       </Card>
 
       {/* Configuration */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Generation Settings */}
         <Card>
           <CardHeader>
@@ -301,6 +309,27 @@ export default function AutoPilotPage() {
               />
               <p className="text-xs text-muted-foreground mt-1">
                 Only auto-publish posts with confidence above this threshold
+              </p>
+            </div>
+
+            {/* ✅ NEW: Image Count Setting */}
+            <div>
+              <label className="block text-sm font-medium mb-2">
+                Images Per Post: {config.imageCount}
+              </label>
+              <input
+                type="range"
+                min="0"
+                max="3"
+                value={config.imageCount}
+                onChange={(e) => setConfig({ ...config, imageCount: parseInt(e.target.value) })}
+                className="w-full"
+              />
+              <p className="text-xs text-muted-foreground mt-1">
+                {config.imageCount === 0 && 'No images (text only)'}
+                {config.imageCount === 1 && 'Single hero image'}
+                {config.imageCount === 2 && 'Before & After story (2 images)'}
+                {config.imageCount === 3 && 'Complete story: Problem → Solution → Result (3 images)'}
               </p>
             </div>
 
@@ -379,7 +408,7 @@ export default function AutoPilotPage() {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="grid grid-cols-3 md:grid-cols-6 gap-2">
+          <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-2">
             {['06:00', '09:00', '12:00', '14:00', '17:00', '20:00'].map((time) => (
               <Button
                 key={time}

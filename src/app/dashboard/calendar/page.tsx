@@ -161,35 +161,35 @@ export default function CalendarPage() {
   return (
     <>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900 flex items-center">
-                <CalendarIcon className="h-6 w-6 mr-2 text-blue-600" />
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center">
+                <CalendarIcon className="h-5 w-5 sm:h-6 sm:w-6 mr-2 text-blue-600" />
                 Content Calendar
               </h1>
-              <p className="text-sm text-gray-600">Plan and schedule your social media posts</p>
+              <p className="text-xs sm:text-sm text-gray-600">Plan and schedule your social media posts</p>
             </div>
             <Button onClick={() => {
               setSelectedDate(new Date())
               setSelectedEvent(null)
               setShowScheduleModal(true)
-            }}>
+            }} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Schedule Post
             </Button>
           </div>
         </header>
 
-        {/* Legend */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3">
-          <div className="flex items-center gap-4">
-            <span className="text-sm font-medium text-gray-700">Status:</span>
-            <div className="flex gap-3">
-              <Badge className="bg-green-500">Published</Badge>
-              <Badge className="bg-purple-500">Scheduled</Badge>
-              <Badge className="bg-gray-500">Draft</Badge>
-              <Badge className="bg-red-500">Failed</Badge>
+        {/* Legend - Mobile scrollable */}
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-2 sm:gap-4 overflow-x-auto">
+            <span className="text-xs sm:text-sm font-medium text-gray-700 flex-shrink-0">Status:</span>
+            <div className="flex gap-2 sm:gap-3 pb-1">
+              <Badge className="bg-green-500 whitespace-nowrap">Published</Badge>
+              <Badge className="bg-purple-500 whitespace-nowrap">Scheduled</Badge>
+              <Badge className="bg-gray-500 whitespace-nowrap">Draft</Badge>
+              <Badge className="bg-red-500 whitespace-nowrap">Failed</Badge>
             </div>
           </div>
         </div>

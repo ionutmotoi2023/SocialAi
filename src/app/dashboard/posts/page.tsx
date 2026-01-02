@@ -7,8 +7,9 @@ import { useRouter } from 'next/navigation'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { FileText, Calendar, CheckCircle, Clock, Plus, Filter } from 'lucide-react'
+import { FileText, Calendar, CheckCircle, Clock, Plus, Filter, ThumbsUp, ThumbsDown } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
+import { useToast } from '@/hooks/use-toast'
 
 interface Post {
   id: string
@@ -30,9 +31,11 @@ interface Post {
 
 export default function PostsPage() {
   const router = useRouter()
+  const { toast } = useToast()
   const [posts, setPosts] = useState<Post[]>([])
   const [isLoading, setIsLoading] = useState(true)
   const [filterStatus, setFilterStatus] = useState<string>('all')
+  const [processingPost, setProcessingPost] = useState<string | null>(null)
 
   useEffect(() => {
     fetchPosts()
@@ -53,6 +56,76 @@ export default function PostsPage() {
       console.error('Failed to fetch posts:', error)
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const handleApprove = async (postId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent card click navigation
+    setProcessingPost(postId)
+    
+    try {
+      const response = await fetch(`/api/posts/${postId}/approve`, {
+        method: 'POST',
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Post approved',
+          description: 'The post has been approved and is ready for scheduling',
+        })
+        fetchPosts() // Refresh list
+      } else {
+        const error = await response.json()
+        toast({
+          title: 'Approval failed',
+          description: error.error || 'Failed to approve post',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Approval failed',
+        description: 'An error occurred while approving the post',
+        variant: 'destructive',
+      })
+    } finally {
+      setProcessingPost(null)
+    }
+  }
+
+  const handleReject = async (postId: string, event: React.MouseEvent) => {
+    event.stopPropagation() // Prevent card click navigation
+    setProcessingPost(postId)
+    
+    try {
+      const response = await fetch(`/api/posts/${postId}/reject`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ reason: 'Rejected by admin' }),
+      })
+
+      if (response.ok) {
+        toast({
+          title: 'Post rejected',
+          description: 'The post has been moved to drafts for editing',
+        })
+        fetchPosts() // Refresh list
+      } else {
+        const error = await response.json()
+        toast({
+          title: 'Rejection failed',
+          description: error.error || 'Failed to reject post',
+          variant: 'destructive',
+        })
+      }
+    } catch (error) {
+      toast({
+        title: 'Rejection failed',
+        description: 'An error occurred while rejecting the post',
+        variant: 'destructive',
+      })
+    } finally {
+      setProcessingPost(null)
     }
   }
 
@@ -90,6 +163,7 @@ export default function PostsPage() {
 
   const statusFilters = [
     { label: 'All Posts', value: 'all' },
+    { label: 'Pending Approval', value: 'PENDING_APPROVAL' }, // ✅ NEW: Filter for pending posts
     { label: 'Drafts', value: 'DRAFT' },
     { label: 'Scheduled', value: 'SCHEDULED' },
     { label: 'Published', value: 'PUBLISHED' },
@@ -109,30 +183,31 @@ export default function PostsPage() {
   return (
     <>
       {/* Header */}
-      <header className="bg-white border-b border-gray-200 px-6 py-4">
-          <div className="flex items-center justify-between">
+      <header className="bg-white border-b border-gray-200 px-4 sm:px-6 py-4">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-bold text-gray-900">Posts</h1>
-              <p className="text-sm text-gray-600">Manage your social media content</p>
+              <h1 className="text-xl sm:text-2xl font-bold text-gray-900">Posts</h1>
+              <p className="text-xs sm:text-sm text-gray-600">Manage your social media content</p>
             </div>
-            <Button onClick={() => router.push('/dashboard/posts/create')}>
+            <Button onClick={() => router.push('/dashboard/posts/create')} className="w-full sm:w-auto">
               <Plus className="mr-2 h-4 w-4" />
               Create Post
             </Button>
           </div>
         </header>
 
-        {/* Filters */}
-        <div className="bg-white border-b border-gray-200 px-6 py-3">
-          <div className="flex items-center gap-2">
-            <Filter className="h-4 w-4 text-gray-600" />
-            <div className="flex gap-2">
+        {/* Filters - Mobile scrollable */}
+        <div className="bg-white border-b border-gray-200 px-4 sm:px-6 py-3">
+          <div className="flex items-center gap-2 overflow-x-auto">
+            <Filter className="h-4 w-4 text-gray-600 flex-shrink-0" />
+            <div className="flex gap-2 pb-1">
               {statusFilters.map((filter) => (
                 <Button
                   key={filter.value}
                   variant={filterStatus === filter.value ? 'default' : 'ghost'}
                   size="sm"
                   onClick={() => setFilterStatus(filter.value)}
+                  className="whitespace-nowrap flex-shrink-0"
                 >
                   {filter.label}
                 </Button>
@@ -142,7 +217,7 @@ export default function PostsPage() {
         </div>
 
         {/* Content */}
-        <main className="flex-1 overflow-y-auto p-6">
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6">
           <div className="max-w-6xl mx-auto">
             {posts.length === 0 ? (
               <Card>
@@ -210,6 +285,32 @@ export default function PostsPage() {
                             hour: '2-digit',
                             minute: '2-digit',
                           })}
+                        </div>
+                      )}
+                      
+                      {/* ✅ NEW: Approve/Reject buttons for PENDING_APPROVAL posts */}
+                      {post.status === 'PENDING_APPROVAL' && (
+                        <div className="mt-4 flex flex-col sm:flex-row gap-2 border-t pt-4">
+                          <Button
+                            size="sm"
+                            variant="default"
+                            className="flex-1 bg-green-600 hover:bg-green-700"
+                            onClick={(e) => handleApprove(post.id, e)}
+                            disabled={processingPost === post.id}
+                          >
+                            <ThumbsUp className="h-4 w-4 mr-2" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            className="flex-1"
+                            onClick={(e) => handleReject(post.id, e)}
+                            disabled={processingPost === post.id}
+                          >
+                            <ThumbsDown className="h-4 w-4 mr-2" />
+                            Reject
+                          </Button>
                         </div>
                       )}
                     </CardContent>

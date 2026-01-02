@@ -14,8 +14,8 @@ export default function DashboardLayout({
         {/* Sidebar - visible on all dashboard pages */}
         <DashboardSidebar />
         
-        {/* Main Content Area */}
-        <div className="flex-1 flex flex-col overflow-hidden">
+        {/* Main Content Area - Fixed overflow for proper scrolling */}
+        <div className="flex-1 flex flex-col overflow-y-auto">
           {children}
         </div>
       </div>

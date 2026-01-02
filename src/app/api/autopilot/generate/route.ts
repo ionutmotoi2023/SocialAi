@@ -6,6 +6,33 @@ import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { generateContent } from '@/lib/ai/openai'
 import { generateAndProcessImage } from '@/lib/image/dalle-workflow'
+import { getNextAvailableSlot } from '@/lib/scheduling/auto-schedule'
+
+/**
+ * Generate story-based prompts for multiple images
+ * Creates a visual narrative: Problem -> Solution -> Result
+ */
+function generateStoryPrompts(postContent: string, imageCount: number): string[] {
+  const basePrompt = postContent.substring(0, 200) // Extract key theme
+  
+  if (imageCount === 1) {
+    return [basePrompt]
+  }
+  
+  if (imageCount === 2) {
+    return [
+      `Beginning/Problem context: ${basePrompt}`,
+      `Solution/Result: ${basePrompt}`,
+    ]
+  }
+  
+  // imageCount === 3 or more
+  return [
+    `Scene 1 - Context/Problem: ${basePrompt}. Show the challenge or starting point.`,
+    `Scene 2 - Process/Action: ${basePrompt}. Show the solution in action or transformation.`,
+    `Scene 3 - Result/Success: ${basePrompt}. Show the positive outcome or achievement.`,
+  ]
+}
 
 // POST /api/autopilot/generate - Bulk generate posts
 
@@ -22,7 +49,9 @@ export async function POST(request: NextRequest) {
       confidenceThreshold = 0.8, 
       topics = [],
       generateImages = true, // NEW: Option to generate images
-      imageStyle = 'professional' // NEW: Image style option
+      imageCount = 1, // ✅ NEW: Number of images per post (1-3)
+      imageStyle = 'professional', // NEW: Image style option
+      autoSchedule = false, // NEW: Auto-schedule approved posts
     } = body
 
     // Get AI config for tenant
@@ -36,6 +65,11 @@ export async function POST(request: NextRequest) {
         { status: 400 }
       )
     }
+
+    // Get AutoPilot config for scheduling settings
+    const autopilotConfig = await prisma.autoPilotConfig.findUnique({
+      where: { tenantId: session.user.tenantId }
+    })
 
     // Get recent content inspiration from RSS feeds (last 7 days)
     const sevenDaysAgo = new Date()
@@ -128,9 +162,9 @@ export async function POST(request: NextRequest) {
 
         // NEW: Generate image with DALL-E 3 if enabled
         let mediaUrls: string[] = []
-        if (generateImages) {
+        if (generateImages && imageCount > 0) {
           try {
-            console.log(`Generating image for post ${i + 1} with enhanced context...`)
+            console.log(`Generating ${imageCount} image(s) for post ${i + 1} with story logic...`)
             
             // Build brand context string from brand data
             const brandContextString = brandData.length > 0
@@ -150,28 +184,59 @@ export async function POST(request: NextRequest) {
               description: tenant.description || undefined
             } : undefined
 
-            const imageResult = await generateAndProcessImage(
-              result.text,
-              session.user.tenantId,
-              {
-                platform: 'linkedin',
-                style: imageStyle as 'professional' | 'creative' | 'minimalist' | 'bold',
-                // ✅ Pass full context for relevant image generation
-                brandContext: brandContextString,
-                rssInspiration: rssInspirationData,
-                tenantInfo: tenantInfoData
+            // ✅ NEW: Story-based prompts for multiple images
+            const storyPrompts = generateStoryPrompts(result.text, imageCount)
+
+            // Generate multiple images with story progression
+            for (let imgIndex = 0; imgIndex < Math.min(imageCount, 3); imgIndex++) {
+              const storyPrompt = storyPrompts[imgIndex] || result.text
+              
+              const imageResult = await generateAndProcessImage(
+                storyPrompt, // Use story-specific prompt
+                session.user.tenantId,
+                {
+                  platform: 'linkedin',
+                  style: imageStyle as 'professional' | 'creative' | 'minimalist' | 'bold',
+                  brandContext: brandContextString,
+                  rssInspiration: rssInspirationData,
+                  tenantInfo: tenantInfoData
+                }
+              )
+              mediaUrls.push(imageResult.imageUrl)
+              console.log(`✅ Image ${imgIndex + 1}/${imageCount} generated: ${imageResult.imageUrl}`)
+              
+              // Small delay between images to avoid rate limiting
+              if (imgIndex < imageCount - 1) {
+                await new Promise(resolve => setTimeout(resolve, 2000))
               }
-            )
-            mediaUrls = [imageResult.imageUrl]
-            console.log(`✅ Image generated with context and watermarked: ${imageResult.imageUrl}`)
+            }
           } catch (imageError) {
-            console.error(`Failed to generate image for post ${i + 1}:`, imageError)
-            // Continue without image if generation fails
+            console.error(`Failed to generate images for post ${i + 1}:`, imageError)
+            // Continue without images if generation fails
           }
         }
 
         // Only create if confidence is above threshold
         if (result.confidence >= confidenceThreshold) {
+          // ✅ NEW: Auto-schedule logic
+          let scheduledAt: Date | null = null
+          let postStatus: 'PENDING_APPROVAL' | 'SCHEDULED' = 'PENDING_APPROVAL'
+
+          // If autoSchedule is enabled AND autopilot config allows it
+          if (autoSchedule && autopilotConfig?.autoSchedule && autopilotConfig.preferredTimes.length > 0) {
+            try {
+              scheduledAt = await getNextAvailableSlot({
+                preferredTimes: autopilotConfig.preferredTimes,
+                postsPerWeek: autopilotConfig.postsPerWeek,
+                tenantId: session.user.tenantId,
+              })
+              postStatus = 'SCHEDULED' // Auto-approved high-confidence posts go directly to SCHEDULED
+              console.log(`✅ Auto-scheduled post for ${scheduledAt.toISOString()}`)
+            } catch (error) {
+              console.error('Auto-schedule failed, defaulting to PENDING_APPROVAL:', error)
+            }
+          }
+
           const post = await prisma.post.create({
             data: {
               tenantId: session.user.tenantId,
@@ -179,7 +244,8 @@ export async function POST(request: NextRequest) {
               title: result.title, // ✅ NEW: Use AI-generated title
               content: result.text,
               mediaUrls, // NEW: Include generated images
-              status: 'DRAFT', // Changed from APPROVED - user should review before publishing
+              status: postStatus, // ✅ SCHEDULED if auto-schedule, PENDING_APPROVAL otherwise
+              scheduledAt, // ✅ NEW: Set scheduled time if auto-schedule enabled
               aiGenerated: true,
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
@@ -195,7 +261,7 @@ export async function POST(request: NextRequest) {
 
           created.push(post.id)
         } else {
-          // Save as draft for review
+          // Save as draft for manual review (low confidence)
           const post = await prisma.post.create({
             data: {
               tenantId: session.user.tenantId,
@@ -203,7 +269,7 @@ export async function POST(request: NextRequest) {
               title: result.title, // ✅ NEW: Use AI-generated title
               content: result.text,
               mediaUrls, // NEW: Include generated images
-              status: 'DRAFT',
+              status: 'DRAFT', // Low confidence = DRAFT for more thorough review
               aiGenerated: true,
               aiModel: aiConfig.selectedModel,
               aiConfidence: result.confidence,
