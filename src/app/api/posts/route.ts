@@ -5,6 +5,8 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { withQuotaCheck } from '@/lib/quota/middleware'
+import { incrementUsage } from '@/lib/quota'
 
 // GET all posts for tenant
 
@@ -66,6 +68,18 @@ export async function POST(req: NextRequest) {
       )
     }
 
+    // Check quota before creating post
+    const quotaCheck = await withQuotaCheck({
+      quotaType: 'posts',
+      amount: 1,
+      autoIncrement: false, // We'll increment manually after successful creation
+      customErrorMessage: 'You have reached your post limit. Please upgrade your plan to create more posts.'
+    })
+
+    if (!quotaCheck.allowed) {
+      return quotaCheck.response
+    }
+
     const body = await req.json()
     const {
       title,
@@ -112,6 +126,9 @@ export async function POST(req: NextRequest) {
         },
       },
     })
+
+    // Increment posts usage after successful creation
+    await incrementUsage(quotaCheck.tenantId!, 'posts', 1)
 
     return NextResponse.json(post, { status: 201 })
   } catch (error) {
