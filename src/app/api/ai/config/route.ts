@@ -13,6 +13,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // ✅ Check if user has tenantId
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
+      )
+    }
+
     const aiConfig = await prisma.aIConfig.findUnique({
       where: { tenantId: session.user.tenantId },
     })
@@ -40,6 +48,14 @@ export async function PATCH(request: NextRequest) {
     const session = await getServerSession(authOptions)
     if (!session?.user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+    }
+
+    // ✅ Check if user has tenantId
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
+      )
     }
 
     const body = await request.json()

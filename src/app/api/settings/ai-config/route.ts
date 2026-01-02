@@ -18,6 +18,14 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    // ✅ Check if user has tenantId (required for non-SUPER_ADMIN)
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
+      )
+    }
+
     const config = await prisma.aIConfig.findUnique({
       where: { tenantId: session.user.tenantId },
     })
@@ -48,6 +56,14 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // ✅ Check if user has tenantId
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
       )
     }
 
