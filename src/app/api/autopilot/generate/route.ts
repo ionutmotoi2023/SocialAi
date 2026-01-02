@@ -60,6 +60,16 @@ export async function POST(request: NextRequest) {
       take: 3,
     })
 
+    // Get tenant info for enhanced context
+    const tenant = await prisma.tenant.findUnique({
+      where: { id: session.user.tenantId },
+      select: {
+        name: true,
+        industry: true,
+        description: true,
+      },
+    })
+
     // Build context for AI
     let contextPrompt = ''
     
@@ -107,17 +117,40 @@ export async function POST(request: NextRequest) {
         let mediaUrls: string[] = []
         if (generateImages) {
           try {
-            console.log(`Generating image for post ${i + 1}...`)
+            console.log(`Generating image for post ${i + 1} with enhanced context...`)
+            
+            // Build brand context string from brand data
+            const brandContextString = brandData.length > 0
+              ? brandData.map(d => `[${d.category}]: ${d.content.substring(0, 300)}`).join('\n')
+              : undefined
+
+            // Build RSS inspiration object
+            const rssInspirationData = inspirationItem ? {
+              title: inspirationItem.patternDetected || '',
+              content: inspirationItem.originalContent?.substring(0, 200) || ''
+            } : undefined
+
+            // Build tenant info object
+            const tenantInfoData = tenant ? {
+              name: tenant.name,
+              industry: tenant.industry || undefined,
+              description: tenant.description || undefined
+            } : undefined
+
             const imageResult = await generateAndProcessImage(
               result.text,
               session.user.tenantId,
               {
                 platform: 'linkedin',
-                style: imageStyle as 'professional' | 'creative' | 'minimalist' | 'bold'
+                style: imageStyle as 'professional' | 'creative' | 'minimalist' | 'bold',
+                // ✅ Pass full context for relevant image generation
+                brandContext: brandContextString,
+                rssInspiration: rssInspirationData,
+                tenantInfo: tenantInfoData
               }
             )
             mediaUrls = [imageResult.imageUrl]
-            console.log(`✅ Image generated and watermarked: ${imageResult.imageUrl}`)
+            console.log(`✅ Image generated with context and watermarked: ${imageResult.imageUrl}`)
           } catch (imageError) {
             console.error(`Failed to generate image for post ${i + 1}:`, imageError)
             // Continue without image if generation fails

@@ -379,18 +379,34 @@ export async function generateImage(
 }
 
 /**
- * Generate image based on social media post content
+ * Generate image based on social media post content with enhanced context
  */
 export async function generateImageForPost(
   postContent: string,
   options: {
     platform?: 'linkedin' | 'twitter' | 'facebook'
     style?: 'professional' | 'creative' | 'minimalist' | 'bold'
+    brandContext?: string
+    rssInspiration?: {
+      title: string
+      content: string
+    }
+    tenantInfo?: {
+      name: string
+      industry?: string
+      description?: string
+    }
   } = {}
 ): Promise<GeneratedImage> {
-  const { platform = 'linkedin', style = 'professional' } = options
+  const { 
+    platform = 'linkedin', 
+    style = 'professional',
+    brandContext,
+    rssInspiration,
+    tenantInfo
+  } = options
 
-  // Build optimized DALL-E prompt
+  // Build optimized DALL-E prompt with full context
   let imagePrompt = ''
 
   // Style guidelines
@@ -408,39 +424,52 @@ export async function generateImageForPost(
     facebook: 'Friendly, relatable visual for Facebook audience.',
   }
 
-  // Extract key themes from post content (simple keyword extraction)
-  const contentLower = postContent.toLowerCase()
-  const keywords: string[] = []
-
-  // Common business/tech keywords
-  const keywordMap: { [key: string]: string } = {
-    'ai': 'artificial intelligence technology',
-    'technology': 'modern technology',
-    'business': 'business professional',
-    'marketing': 'marketing strategy',
-    'data': 'data analytics',
-    'team': 'business team collaboration',
-    'success': 'success achievement',
-    'growth': 'business growth',
-    'innovation': 'innovation technology',
-    'leadership': 'leadership professional',
-  }
-
-  Object.entries(keywordMap).forEach(([keyword, phrase]) => {
-    if (contentLower.includes(keyword)) {
-      keywords.push(phrase)
+  // 1. Add Brand & Industry Context
+  if (tenantInfo?.name) {
+    imagePrompt += `Visual for ${tenantInfo.name}`
+    if (tenantInfo.industry) {
+      imagePrompt += `, a ${tenantInfo.industry} company`
     }
-  })
-
-  // Build final prompt
-  if (keywords.length > 0) {
-    imagePrompt = `${styleGuides[style]} ${platformGuides[platform]} Theme: ${keywords.slice(0, 3).join(', ')}. `
-  } else {
-    // Fallback: generic business image
-    imagePrompt = `${styleGuides[style]} ${platformGuides[platform]} Generic professional business visual. `
+    imagePrompt += '. '
+    
+    if (tenantInfo.description) {
+      // Extract key business themes from description
+      const descriptionThemes = extractKeyThemes(tenantInfo.description, 50)
+      if (descriptionThemes) {
+        imagePrompt += `Business focus: ${descriptionThemes}. `
+      }
+    }
   }
 
+  // 2. Add RSS Inspiration Context
+  if (rssInspiration?.title) {
+    const topicTheme = extractKeyThemes(rssInspiration.title, 60)
+    if (topicTheme) {
+      imagePrompt += `Topic: ${topicTheme}. `
+    }
+  }
+
+  // 3. Extract Brand Themes from Brand Context
+  if (brandContext) {
+    const brandThemes = extractKeyThemes(brandContext, 100)
+    if (brandThemes) {
+      imagePrompt += `Brand themes: ${brandThemes}. `
+    }
+  }
+
+  // 4. Analyze Post Content for Visual Elements
+  const contentThemes = analyzePostContentForImage(postContent)
+  if (contentThemes.length > 0) {
+    imagePrompt += `Visual elements: ${contentThemes.slice(0, 3).join(', ')}. `
+  }
+
+  // 5. Add Style & Platform Guidelines
+  imagePrompt += `${styleGuides[style]} ${platformGuides[platform]} `
+  
+  // 6. Final instructions
   imagePrompt += 'No text or words in the image. Photo-realistic quality.'
+
+  console.log('🎨 Enhanced DALL-E prompt with context:', imagePrompt.substring(0, 200) + '...')
 
   // Determine optimal size for platform
   let size: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024'
@@ -454,4 +483,82 @@ export async function generateImageForPost(
     quality: 'standard',
     style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
   })
+}
+
+/**
+ * Extract key themes from text for image generation
+ */
+function extractKeyThemes(text: string, maxLength: number = 100): string {
+  // Remove common stop words and extract meaningful phrases
+  const stopWords = ['the', 'a', 'an', 'and', 'or', 'but', 'in', 'on', 'at', 'to', 'for', 'of', 'with', 'by', 'from', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'do', 'does', 'did', 'will', 'would', 'should', 'could', 'may', 'might', 'can', 'this', 'that', 'these', 'those']
+  
+  const words = text.toLowerCase()
+    .replace(/[^\w\s]/g, ' ')
+    .split(/\s+/)
+    .filter(word => word.length > 3 && !stopWords.includes(word))
+  
+  // Get unique words and join them
+  const uniqueWords = [...new Set(words)].slice(0, 8)
+  const result = uniqueWords.join(' ')
+  
+  return result.length > maxLength ? result.substring(0, maxLength) : result
+}
+
+/**
+ * Analyze post content to extract visual elements for image generation
+ */
+function analyzePostContentForImage(postContent: string): string[] {
+  const contentLower = postContent.toLowerCase()
+  const visualElements: string[] = []
+
+  // Enhanced keyword mapping with more specific visual descriptions
+  const visualKeywordMap: { [key: string]: string } = {
+    'ai': 'artificial intelligence visualization',
+    'artificial intelligence': 'AI neural networks',
+    'technology': 'modern technology interface',
+    'software': 'software development screen',
+    'business': 'business professionals meeting',
+    'marketing': 'digital marketing dashboard',
+    'data': 'data analytics graphs',
+    'analytics': 'analytics charts and metrics',
+    'team': 'team collaboration workspace',
+    'success': 'success celebration achievement',
+    'growth': 'business growth chart trending up',
+    'innovation': 'innovative technology concept',
+    'leadership': 'leadership professional presenting',
+    'strategy': 'strategic planning board',
+    'customer': 'customer service interaction',
+    'product': 'product showcase display',
+    'service': 'service delivery professional',
+    'solution': 'problem-solving concept',
+    'cloud': 'cloud computing infrastructure',
+    'digital': 'digital transformation',
+    'automation': 'automation workflow',
+    'ecommerce': 'online shopping experience',
+    'shopping': 'retail shopping interface',
+    'mobile': 'mobile app interface',
+    'web': 'web application design',
+    'security': 'cybersecurity protection',
+    'finance': 'financial charts and graphs',
+    'healthcare': 'healthcare technology',
+    'education': 'online learning environment',
+    'training': 'professional training session',
+    'networking': 'professional networking event',
+    'conference': 'business conference presentation',
+    'startup': 'startup team workspace',
+    'entrepreneur': 'entrepreneur working',
+  }
+
+  Object.entries(visualKeywordMap).forEach(([keyword, visualDesc]) => {
+    if (contentLower.includes(keyword)) {
+      visualElements.push(visualDesc)
+    }
+  })
+
+  // If no specific keywords found, use generic business visual
+  if (visualElements.length === 0) {
+    visualElements.push('professional business environment')
+  }
+
+  return visualElements
 }
