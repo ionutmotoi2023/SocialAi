@@ -131,7 +131,7 @@ export async function generateContent(
       text: generatedText,
       hashtags,
       confidence,
-      model: hasMedia ? 'gpt-4o-vision' : 'gpt-4-turbo',
+      model: hasMedia ? 'gpt-4o' : 'gpt-4-turbo',
       generationTime,
       suggestions: generateSuggestions(generatedText),
     }
