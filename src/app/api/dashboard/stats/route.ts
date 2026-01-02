@@ -1,13 +1,11 @@
-export const dynamic = 'force-dynamic'
-
 import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 
-export const runtime = 'nodejs'
+export const dynamic = 'force-dynamic'
 
-export async function GET(req: NextRequest) {
+export async function GET(request: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
 
@@ -18,60 +16,73 @@ export async function GET(req: NextRequest) {
       )
     }
 
-    const tenantId = session.user.tenantId
+    // For SUPER_ADMIN, show platform-wide stats
+    // For other roles, show tenant-specific stats
+    const isSuperAdmin = session.user.role === 'SUPER_ADMIN'
+    const tenantId = isSuperAdmin ? undefined : session.user.tenantId
 
-    // Get stats from database
+    // Build where clause based on role
+    const whereClause = tenantId ? { tenantId } : {}
+
+    // Fetch all stats in parallel
     const [
       totalPosts,
       scheduledPosts,
       publishedPosts,
       aiGeneratedPosts,
+      avgConfidence,
     ] = await Promise.all([
+      // Total posts
       prisma.post.count({
-        where: { tenantId },
+        where: whereClause,
       }),
+      
+      // Scheduled posts
       prisma.post.count({
         where: {
-          tenantId,
+          ...whereClause,
           status: 'SCHEDULED',
         },
       }),
+      
+      // Published posts
       prisma.post.count({
         where: {
-          tenantId,
+          ...whereClause,
           status: 'PUBLISHED',
         },
       }),
+      
+      // AI Generated posts
       prisma.post.count({
         where: {
-          tenantId,
+          ...whereClause,
           aiGenerated: true,
+        },
+      }),
+      
+      // Average AI confidence
+      prisma.post.aggregate({
+        where: {
+          ...whereClause,
+          aiGenerated: true,
+          aiConfidence: {
+            not: null,
+          },
+        },
+        _avg: {
+          aiConfidence: true,
         },
       }),
     ])
 
-    // Calculate average confidence for AI-generated posts
-    const aiPosts = await prisma.post.findMany({
-      where: {
-        tenantId,
-        aiGenerated: true,
-        aiConfidence: { not: null },
-      },
-      select: {
-        aiConfidence: true,
-      },
-    })
-
-    const averageConfidence = aiPosts.length > 0
-      ? Math.round(
-          (aiPosts.reduce((sum, post) => sum + (post.aiConfidence || 0), 0) /
-            aiPosts.length) *
-            100
-        )
+    // Calculate average confidence as percentage
+    const averageConfidence = avgConfidence._avg.aiConfidence
+      ? Math.round(avgConfidence._avg.aiConfidence * 100)
       : 0
 
-    // Estimate time saved (assuming 15 minutes per AI-generated post)
-    const timesSaved = Math.round((aiGeneratedPosts * 15) / 60) // Convert to hours
+    // Estimate time saved (5 minutes per AI-generated post)
+    const timesSaved = Math.round((aiGeneratedPosts * 5) / 60) // Convert minutes to hours
 
     return NextResponse.json({
       totalPosts,
@@ -82,9 +93,9 @@ export async function GET(req: NextRequest) {
       timesSaved,
     })
   } catch (error) {
-    console.error('Dashboard stats error:', error)
+    console.error('Error fetching dashboard stats:', error)
     return NextResponse.json(
-      { error: 'Failed to fetch stats' },
+      { error: 'Failed to fetch dashboard stats' },
       { status: 500 }
     )
   }
