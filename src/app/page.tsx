@@ -153,6 +153,14 @@ export default function HomePage() {
               <Bot className="h-6 w-6" />
               <span className="font-semibold">Social Media AI SaaS</span>
             </div>
+            <div className="flex gap-6 mb-4 md:mb-0">
+              <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
+                Privacy Policy
+              </Link>
+              <a href="mailto:office@mindloop.ro" className="text-sm text-gray-400 hover:text-white transition-colors">
+                Contact
+              </a>
+            </div>
             <div className="text-sm text-gray-400">
               © 2026 AI MINDLOOP SRL. All rights reserved.
             </div>
