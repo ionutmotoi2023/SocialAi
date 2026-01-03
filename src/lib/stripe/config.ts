@@ -1,9 +1,30 @@
 import Stripe from 'stripe'
 
-// Server-side Stripe instance
-export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY || '', {
-  apiVersion: '2024-11-20.acacia',
-  typescript: true,
+let stripeInstance: Stripe | null = null
+
+// Server-side Stripe instance (lazy-loaded)
+export function getStripe(): Stripe {
+  if (!stripeInstance) {
+    const apiKey = process.env.STRIPE_SECRET_KEY
+    
+    if (!apiKey) {
+      throw new Error('STRIPE_SECRET_KEY is not configured')
+    }
+    
+    stripeInstance = new Stripe(apiKey, {
+      apiVersion: '2024-11-20.acacia',
+      typescript: true,
+    })
+  }
+  
+  return stripeInstance
+}
+
+// Legacy export for backward compatibility (will throw if not configured)
+export const stripe = new Proxy({} as Stripe, {
+  get(target, prop) {
+    return getStripe()[prop as keyof Stripe]
+  }
 })
 
 // Get Price ID for a plan
