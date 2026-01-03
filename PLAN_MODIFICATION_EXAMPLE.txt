@@ -1,0 +1,102 @@
+/**
+ * EXEMPLU DE MODIFICARE - subscription-plans.ts
+ * 
+ * Acest exemplu arată cum să modifici planul STARTER:
+ * - Schimbă prețul de la $29 la $39
+ * - Crește limitele
+ * - Adaugă noi features
+ */
+
+export type SubscriptionPlanType = 'FREE' | 'STARTER' | 'PROFESSIONAL' | 'ENTERPRISE'
+
+export const SUBSCRIPTION_PLANS = {
+  FREE: {
+    name: 'Free',
+    description: 'Perfect for trying out the platform',
+    price: 0,
+    priceDisplay: 'Free',
+    limits: {
+      posts: 5,
+      users: 1,
+      aiCredits: 10,
+    },
+    features: [
+      '5 posts per month',
+      '1 user',
+      '10 AI credits',
+      'Basic AI models',
+      'LinkedIn integration',
+      'Email support',
+    ],
+  },
+  
+  STARTER: {
+    // ✅ MODIFICĂRI AICI:
+    name: 'Starter',
+    description: 'Perfect for freelancers and small teams',  // ← Nouă descriere
+    price: 3900,              // ← $39 în cents (era 2900 = $29)
+    priceDisplay: '$39/month', // ← Nou display (era '$29/month')
+    limits: {
+      posts: 100,             // ← Crescut de la 50 la 100
+      users: 5,               // ← Crescut de la 3 la 5
+      aiCredits: 1000,        // ← Crescut de la 500 la 1000
+    },
+    features: [
+      '100 posts per month',  // ← Actualizat
+      '5 users',              // ← Actualizat
+      '1,000 AI credits',     // ← Actualizat
+      'All AI models (GPT-4, Claude, Gemini)',
+      'Auto-Pilot mode',
+      'Brand training',
+      'Content sources (RSS)',
+      'Priority email support',
+      'Advanced analytics',   // ← Nou feature!
+      'Scheduled posting',    // ← Nou feature!
+    ],
+    popular: true,            // ← Adaugă badge "Most Popular"
+  },
+  
+  PROFESSIONAL: {
+    name: 'Professional',
+    description: 'For growing businesses and teams',
+    price: 9900,
+    priceDisplay: '$99/month',
+    limits: {
+      posts: 200,
+      users: 10,
+      aiCredits: 2000,
+    },
+    features: [
+      '200 posts per month',
+      '10 users',
+      '2,000 AI credits',
+      'All AI models',
+      'Auto-Pilot mode',
+      'Advanced brand training',
+      'Unlimited content sources',
+      'Analytics dashboard',
+      'Priority support',
+    ],
+  },
+  
+  ENTERPRISE: {
+    name: 'Enterprise',
+    description: 'Custom solutions for large organizations',
+    price: 29900,
+    priceDisplay: '$299/month',
+    limits: {
+      posts: 9999,
+      users: 9999,
+      aiCredits: 9999,
+    },
+    features: [
+      'Unlimited posts',
+      'Unlimited users',
+      'Unlimited AI credits',
+      'All features included',
+      'Custom integrations',
+      'Dedicated account manager',
+      '24/7 phone support',
+    ],
+  },
+}

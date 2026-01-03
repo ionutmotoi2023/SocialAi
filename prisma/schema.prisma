@@ -463,3 +463,35 @@ model ContactMessage {
   @@index([createdAt])
   @@map("contact_messages")
 }
+
+// Pricing Configuration (managed by Super Admin)
+model PricingConfig {
+  id        String   @id @default(cuid())
+  plan      String   @unique // 'FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE'
+  
+  // Display info
+  name        String
+  description String
+  
+  // Pricing
+  price        Int    // in cents
+  priceDisplay String // "$29/month"
+  
+  // Limits
+  postsLimit     Int
+  usersLimit     Int
+  aiCreditsLimit Int
+  
+  // Features (stored as JSON array)
+  features Json // ["50 posts per month", "3 users", ...]
+  
+  // UI settings
+  popular       Boolean @default(false)
+  stripePriceId String? // Optional Stripe Price ID
+  
+  // Metadata
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  @@map("pricing_configs")
+}
