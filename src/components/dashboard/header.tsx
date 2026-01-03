@@ -1,11 +1,70 @@
 'use client'
 
+import { useEffect, useState } from 'react'
 import { Bell, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 
+interface Subscription {
+  plan: string
+  status: string
+}
+
 export function DashboardHeader() {
+  const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [loading, setLoading] = useState(true)
+
+  useEffect(() => {
+    const fetchSubscription = async () => {
+      try {
+        const response = await fetch('/api/subscription/current')
+        if (response.ok) {
+          const data = await response.json()
+          setSubscription(data.subscription)
+        }
+      } catch (error) {
+        console.error('Failed to fetch subscription:', error)
+      } finally {
+        setLoading(false)
+      }
+    }
+
+    fetchSubscription()
+  }, [])
+
+  const getPlanDisplay = () => {
+    if (loading) return 'Loading...'
+    if (!subscription) return 'Free Plan'
+    
+    // Format plan name
+    const planName = subscription.plan.charAt(0) + subscription.plan.slice(1).toLowerCase()
+    
+    // Add status badge if trial
+    if (subscription.status === 'TRIAL') {
+      return `${planName} (Trial)`
+    }
+    
+    return `${planName} Plan`
+  }
+
+  const getPlanVariant = () => {
+    if (!subscription) return 'secondary'
+    
+    switch (subscription.plan) {
+      case 'FREE':
+        return 'secondary'
+      case 'STARTER':
+        return 'default'
+      case 'PROFESSIONAL':
+        return 'default'
+      case 'ENTERPRISE':
+        return 'default'
+      default:
+        return 'secondary'
+    }
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -34,9 +93,9 @@ export function DashboardHeader() {
             </Badge>
           </Button>
 
-          {/* Plan Badge */}
-          <Badge variant="secondary" className="font-normal">
-            Pro Plan
+          {/* Plan Badge - Dynamic from DB */}
+          <Badge variant={getPlanVariant() as any} className="font-normal">
+            {getPlanDisplay()}
           </Badge>
         </div>
       </div>
