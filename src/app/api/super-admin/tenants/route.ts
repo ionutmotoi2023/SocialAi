@@ -225,7 +225,7 @@ export async function POST(request: NextRequest) {
           {
             inviterName: session.user.name || 'System Administrator',
             tenantName: tenant.name,
-            invitationLink: `${process.env.NEXTAUTH_URL}/team/invitations/accept?token=${invitation.id}`,
+            invitationLink: `${process.env.NEXTAUTH_URL}/accept-invitation?token=${invitation.id}`,
             role: 'TENANT_ADMIN',
             expiresAt: invitation.expiresAt
           }

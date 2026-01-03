@@ -224,24 +224,37 @@ Sent from socialai.mindloop.ro
   return result
 }
 
-// Send team invitation email
+// Send team invitation email (supports both old and new format)
 export async function sendInvitationEmail(
   email: string,
-  invitation: {
-    id: string
-    role: string
-    inviter: {
+  invitationData: {
+    // New format (from tenant creation)
+    inviterName?: string
+    tenantName?: string
+    invitationLink?: string
+    role?: string
+    expiresAt?: Date
+    // Old format (backward compatibility)
+    id?: string
+    inviter?: {
       name: string | null
       email: string
     } | null
   },
-  tenantName?: string
+  tenantName?: string // Legacy parameter
 ) {
-  const inviterName = invitation.inviter?.name || invitation.inviter?.email || 'A team member'
-  const roleName = invitation.role.replace('_', ' ')
+  // Handle both old and new format
+  const inviterName = invitationData.inviterName || invitationData.inviter?.name || invitationData.inviter?.email || 'A team member'
+  const role = invitationData.role || 'TENANT_ADMIN'
+  const roleName = role.replace('_', ' ')
   const appName = process.env.NEXT_PUBLIC_APP_NAME || 'SocialAI'
   const appUrl = process.env.NEXTAUTH_URL || 'https://socialai.mindloop.ro'
-  const acceptUrl = `${appUrl}/accept-invitation?token=${invitation.id}`
+  
+  // Use provided link or generate from id
+  const acceptUrl = invitationData.invitationLink || `${appUrl}/team/invitations/accept?token=${invitationData.id}`
+  
+  // Use provided tenantName or legacy parameter
+  const finalTenantName = invitationData.tenantName || tenantName
 
   const htmlContent = `
     <!DOCTYPE html>
@@ -264,7 +277,7 @@ export async function sendInvitationEmail(
           <h1 style="margin: 0; font-size: 28px;">🎉 You're Invited!</h1>
         </div>
         <div class="content">
-          <p><strong>${inviterName}</strong> has invited you to join their team${tenantName ? ` at <strong>${tenantName}</strong>` : ''} on ${appName}.</p>
+          <p><strong>${inviterName}</strong> has invited you to join their team${finalTenantName ? ` at <strong>${finalTenantName}</strong>` : ''} on ${appName}.</p>
           
           <div class="info">
             <p style="margin: 5px 0;"><strong>👤 Your Role:</strong> ${roleName}</p>
@@ -297,7 +310,7 @@ export async function sendInvitationEmail(
   const textContent = `
 You're Invited to Join ${appName}!
 
-${inviterName} has invited you to join their team${tenantName ? ` at ${tenantName}` : ''}.
+${inviterName} has invited you to join their team${finalTenantName ? ` at ${finalTenantName}` : ''}.
 
 Your Role: ${roleName}
 Email: ${email}
@@ -316,7 +329,7 @@ ${appName}
   console.log('Sending invitation email to:', email)
   return await sendEmail({
     to: email,
-    subject: `You're invited to join ${tenantName || 'a team'} on ${appName}`,
+    subject: `You're invited to join ${finalTenantName || 'a team'} on ${appName}`,
     text: textContent,
     html: htmlContent,
   })
