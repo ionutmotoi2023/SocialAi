@@ -3,6 +3,11 @@ import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { SUBSCRIPTION_PLANS, SubscriptionPlanType } from '@/lib/subscription-plans'
+import { revalidatePath } from 'next/cache'
+
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
 
 // GET /api/super-admin/pricing - Fetch current pricing config
 export async function GET(req: NextRequest) {
@@ -139,6 +144,11 @@ export async function POST(req: NextRequest) {
       }
     })
 
+    // Revalidate pricing pages to clear cache
+    revalidatePath('/pricing')
+    revalidatePath('/api/pricing')
+    revalidatePath('/dashboard/super-admin/pricing')
+
     return NextResponse.json({
       message: 'Pricing plan updated successfully',
       plan: updatedPlan
@@ -177,6 +187,11 @@ export async function DELETE(req: NextRequest) {
     await prisma.pricingConfig.delete({
       where: { plan: planId }
     })
+
+    // Revalidate pricing pages to clear cache
+    revalidatePath('/pricing')
+    revalidatePath('/api/pricing')
+    revalidatePath('/dashboard/super-admin/pricing')
 
     return NextResponse.json({
       message: 'Plan reset to defaults successfully'
