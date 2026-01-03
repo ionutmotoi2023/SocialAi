@@ -90,10 +90,27 @@ export default function PricingManagementPage() {
   const handleSavePlan = async (planData: PlanConfig) => {
     setSaving(true)
     try {
+      // Transform UI structure to API structure
+      const apiPayload = {
+        planId: planData.plan,
+        name: planData.name,
+        description: planData.description,
+        price: planData.price,
+        priceDisplay: planData.priceDisplay,
+        limits: {
+          posts: planData.postsLimit,
+          users: planData.usersLimit,
+          aiCredits: planData.aiCreditsLimit
+        },
+        features: planData.features,
+        isActive: true,
+        isPopular: planData.popular
+      }
+
       const response = await fetch('/api/super-admin/pricing', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(planData)
+        body: JSON.stringify(apiPayload)
       })
 
       const data = await response.json()
