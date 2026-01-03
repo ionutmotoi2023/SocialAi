@@ -13,7 +13,7 @@ import { useToast } from '@/hooks/use-toast'
 import { 
   Building2, Users, FileText, Rss, Image as ImageIcon, Shield, 
   Plus, Edit, Trash2, Eye, Search, ChevronRight, TrendingUp,
-  Calendar, Globe, Briefcase, CreditCard
+  Calendar, Globe, Briefcase, CreditCard, DollarSign
 } from 'lucide-react'
 
 interface TenantStats {
@@ -267,6 +267,10 @@ export default function SuperAdminPage() {
             <Button variant="outline" onClick={() => router.push('/dashboard/super-admin/settings/stripe')}>
               <Shield className="h-4 w-4 mr-2" />
               Stripe
+            </Button>
+            <Button variant="outline" onClick={() => router.push('/dashboard/super-admin/pricing')}>
+              <DollarSign className="h-4 w-4 mr-2" />
+              Pricing
             </Button>
             <Button onClick={() => router.push('/dashboard/super-admin/tenants/new')}>
               <Plus className="h-4 w-4 mr-2" />
