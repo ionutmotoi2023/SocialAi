@@ -1,8 +1,12 @@
 import { NextResponse } from 'next/server'
 import { getPricingPlans } from '@/lib/pricing-utils'
 
+// Force dynamic rendering - no caching
+export const dynamic = 'force-dynamic'
+export const revalidate = 0
+
 // GET /api/pricing - Public endpoint for fetching pricing plans
-// Updated: 2026-01-03 - Using dynamic pricing from database
+// Updated: 2026-01-03 - Using dynamic pricing from database with no caching
 export async function GET() {
   try {
     const plans = await getPricingPlans()
