@@ -30,6 +30,14 @@ export async function POST(request: NextRequest) {
       )
     }
 
+    // Super admins need to have a tenantId to scrape
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'Super admin must be associated with a tenant to use brand scraping' },
+        { status: 400 }
+      )
+    }
+
     const { websiteUrl } = await request.json()
 
     if (!websiteUrl) {

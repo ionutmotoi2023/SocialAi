@@ -23,11 +23,12 @@ export async function GET(req: NextRequest) {
       select: {
         id: true,
         name: true,
-        description: true,
         type: true,
-        url: true,
-        size: true,
+        fileUrl: true,
+        fileSize: true,
         mimeType: true,
+        isDefault: true,
+        watermarkSettings: true,
         createdAt: true,
         updatedAt: true,
       },
@@ -64,11 +65,11 @@ export async function POST(req: NextRequest) {
     }
 
     const body = await req.json()
-    const { name, description, type, url, size, mimeType } = body
+    const { name, type, fileUrl, fileSize, mimeType, isDefault, watermarkSettings } = body
 
-    if (!name || !type || !url) {
+    if (!name || !type || !fileUrl) {
       return NextResponse.json(
-        { error: 'Name, type, and URL are required' },
+        { error: 'Name, type, and fileUrl are required' },
         { status: 400 }
       )
     }
@@ -77,19 +78,20 @@ export async function POST(req: NextRequest) {
       data: {
         tenantId: session.user.tenantId,
         name,
-        description,
         type,
-        url,
-        size,
+        fileUrl,
+        fileSize,
         mimeType,
+        isDefault: isDefault || false,
+        watermarkSettings,
       },
     })
 
-    // If this is a LOGO type, update tenant logo
-    if (type === 'LOGO') {
+    // If this is a logo type, update tenant logo
+    if (type === 'logo' || type === 'LOGO') {
       await prisma.tenant.update({
         where: { id: session.user.tenantId },
-        data: { logo: url },
+        data: { logo: fileUrl },
       })
     }
 
