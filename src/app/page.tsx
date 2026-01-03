@@ -170,9 +170,9 @@ export default function HomePage() {
               <Link href="/privacy" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Privacy Policy
               </Link>
-              <a href="mailto:office@mindloop.ro" className="text-sm text-gray-400 hover:text-white transition-colors">
+              <Link href="/contact" className="text-sm text-gray-400 hover:text-white transition-colors">
                 Contact
-              </a>
+              </Link>
             </div>
             <div className="text-sm text-gray-400">
               © 2026 AI MINDLOOP SRL. All rights reserved.
