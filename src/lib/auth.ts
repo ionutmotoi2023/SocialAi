@@ -64,13 +64,13 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Invalid email or password')
         }
 
-        // TODO: In production, you should hash passwords with bcrypt
-        // For now, we'll use a simple comparison (INSECURE - DEMO ONLY)
-        // const isPasswordValid = await compare(credentials.password, user.passwordHash)
-        
-        // Temporary: Accept any password for demo
-        // In production, uncomment the bcrypt check above
-        const isPasswordValid = true
+        // Check password only if user has a password set (credentials login)
+        if (!user.password) {
+          throw new Error('This account uses OAuth authentication. Please sign in with LinkedIn.')
+        }
+
+        // Verify password
+        const isPasswordValid = await compare(credentials.password, user.password)
 
         if (!isPasswordValid) {
           throw new Error('Invalid email or password')

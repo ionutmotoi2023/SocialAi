@@ -48,14 +48,16 @@ enum UserRole {
 }
 
 model User {
-  id        String   @id @default(cuid())
-  email     String   @unique
-  name      String?
-  avatar    String?
-  role      UserRole @default(VIEWER)
-  tenantId  String? // Optional for SUPER_ADMIN - they can access all tenants
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id            String    @id @default(cuid())
+  email         String    @unique
+  name          String?
+  password      String?   // Hashed password for credentials login (optional for OAuth users)
+  avatar        String?
+  role          UserRole  @default(VIEWER)
+  tenantId      String?   // Optional for SUPER_ADMIN - they can access all tenants
+  emailVerified DateTime? // Email verification timestamp
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
 
   // Relations
   tenant      Tenant?      @relation(fields: [tenantId], references: [id], onDelete: Cascade)
