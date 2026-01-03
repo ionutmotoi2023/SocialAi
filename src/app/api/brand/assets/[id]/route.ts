@@ -64,6 +64,14 @@ export async function DELETE(
       where: { id: assetId }
     })
 
+    // If this was a LOGO, clear tenant logo
+    if (asset.type === 'logo' || asset.type === 'LOGO') {
+      await prisma.tenant.update({
+        where: { id: session.user.tenantId },
+        data: { logo: null },
+      })
+    }
+
     // TODO: Delete actual file from storage (local or S3)
     // await deleteFile(asset.fileUrl)
 
