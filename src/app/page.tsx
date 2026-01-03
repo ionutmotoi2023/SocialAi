@@ -46,24 +46,37 @@ export default function HomePage() {
   return (
     <div className="min-h-screen bg-gradient-to-br from-blue-50 via-white to-purple-50">
       {/* Navigation */}
-      <nav className="border-b bg-white/80 backdrop-blur-sm">
-        <div className="container mx-auto px-4 py-4 flex justify-between items-center">
-          <div className="flex items-center space-x-3">
+      <nav className="border-b bg-white/80 backdrop-blur-sm sticky top-0 z-50 shadow-sm">
+        <div className="container mx-auto px-4 sm:px-6 py-4 flex justify-between items-center">
+          {/* Logo Only - No Text */}
+          <Link href="/" className="flex items-center">
             <Image 
               src="/logo.png" 
               alt="AI MINDLOOP SRL" 
-              width={40} 
-              height={40}
-              className="rounded-lg"
+              width={56} 
+              height={56}
+              className="rounded-lg hover:opacity-90 transition-opacity cursor-pointer"
             />
-            <span className="text-xl font-bold">AI MINDLOOP SRL</span>
-          </div>
-          <div className="flex items-center space-x-4">
+          </Link>
+          
+          {/* CTA Buttons */}
+          <div className="flex items-center gap-3 sm:gap-4">
             <Link href="/login">
-              <Button variant="outline">Login</Button>
+              <Button 
+                variant="outline" 
+                size="lg"
+                className="font-semibold border-2 hover:bg-blue-50 hover:border-blue-600 transition-all"
+              >
+                Login
+              </Button>
             </Link>
             <Link href="/register">
-              <Button>Get Started</Button>
+              <Button 
+                size="lg"
+                className="font-semibold bg-gradient-to-r from-blue-600 to-purple-600 hover:from-blue-700 hover:to-purple-700 shadow-md"
+              >
+                Get Started
+              </Button>
             </Link>
           </div>
         </div>
