@@ -1,6 +1,6 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import {
   Dialog,
@@ -13,8 +13,9 @@ import {
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Check, AlertTriangle } from 'lucide-react'
-import { SUBSCRIPTION_PLANS, SubscriptionPlanType } from '@/lib/subscription-plans'
+import { SubscriptionPlanType } from '@/lib/subscription-plans'
 import { useToast } from '@/hooks/use-toast'
+import type { PricingPlan } from '@/lib/pricing-utils'
 
 interface PlanSelectionDialogProps {
   open: boolean
@@ -35,12 +36,39 @@ export function PlanSelectionDialog({
 }: PlanSelectionDialogProps) {
   const [selectedPlan, setSelectedPlan] = useState<SubscriptionPlanType | null>(null)
   const [isLoading, setIsLoading] = useState(false)
+  const [plans, setPlans] = useState<PricingPlan[]>([])
+  const [loadingPlans, setLoadingPlans] = useState(true)
   const router = useRouter()
   const { toast } = useToast()
 
-  const availablePlans = Object.keys(SUBSCRIPTION_PLANS).filter(
-    plan => plan !== currentPlan
-  ) as SubscriptionPlanType[]
+  // Fetch dynamic pricing from API
+  useEffect(() => {
+    const fetchPricing = async () => {
+      try {
+        const response = await fetch('/api/pricing')
+        if (response.ok) {
+          const data = await response.json()
+          setPlans(data.plans)
+        }
+      } catch (error) {
+        console.error('Failed to fetch pricing:', error)
+      } finally {
+        setLoadingPlans(false)
+      }
+    }
+    if (open) {
+      fetchPricing()
+    }
+  }, [open])
+
+  // Helper to get plan by ID
+  const getPlan = (planId: SubscriptionPlanType) => {
+    return plans.find(p => p.planId === planId)
+  }
+
+  const availablePlans = plans.filter(
+    plan => plan.planId !== currentPlan
+  ).map(p => p.planId as SubscriptionPlanType)
 
   const handleConfirm = async () => {
     if (!selectedPlan) return
@@ -104,23 +132,26 @@ export function PlanSelectionDialog({
 
   const isUpgrade = () => {
     if (!selectedPlan) return false
-    const currentPrice = SUBSCRIPTION_PLANS[currentPlan].price
-    const newPrice = SUBSCRIPTION_PLANS[selectedPlan].price
-    return newPrice > currentPrice
+    const currentPlanData = getPlan(currentPlan)
+    const newPlanData = getPlan(selectedPlan)
+    if (!currentPlanData || !newPlanData) return false
+    return newPlanData.price > currentPlanData.price
   }
 
-  const getDowngradeWarnings = (plan: SubscriptionPlanType) => {
+  const getDowngradeWarnings = (planId: string) => {
     const warnings: string[] = []
-    const newLimits = SUBSCRIPTION_PLANS[plan].limits
+    const planData = getPlan(planId as SubscriptionPlanType)
+    if (!planData) return warnings
+    const newLimits = planData.limits
 
     if (currentUsage.postsUsed > newLimits.posts) {
-      warnings.push(`You've used ${currentUsage.postsUsed} posts, but ${plan} allows only ${newLimits.posts}`)
+      warnings.push(`You've used ${currentUsage.postsUsed} posts, but ${planData.name} allows only ${newLimits.posts}`)
     }
     if (currentUsage.usersUsed > newLimits.users) {
-      warnings.push(`You have ${currentUsage.usersUsed} users, but ${plan} allows only ${newLimits.users}`)
+      warnings.push(`You have ${currentUsage.usersUsed} users, but ${planData.name} allows only ${newLimits.users}`)
     }
     if (currentUsage.aiCreditsUsed > newLimits.aiCredits) {
-      warnings.push(`You've used ${currentUsage.aiCreditsUsed} AI credits, but ${plan} allows only ${newLimits.aiCredits}`)
+      warnings.push(`You've used ${currentUsage.aiCreditsUsed} AI credits, but ${planData.name} allows only ${newLimits.aiCredits}`)
     }
 
     return warnings
@@ -129,8 +160,12 @@ export function PlanSelectionDialog({
   const calculateProration = () => {
     if (!selectedPlan) return null
     
-    const currentPrice = SUBSCRIPTION_PLANS[currentPlan].price
-    const newPrice = SUBSCRIPTION_PLANS[selectedPlan].price
+    const currentPlanData = getPlan(currentPlan)
+    const newPlanData = getPlan(selectedPlan)
+    if (!currentPlanData || !newPlanData) return null
+    
+    const currentPrice = currentPlanData.price
+    const newPrice = newPlanData.price
     const priceDiff = newPrice - currentPrice
     
     // Assume 15 days left in billing cycle (simplified)
@@ -151,23 +186,31 @@ export function PlanSelectionDialog({
         <DialogHeader>
           <DialogTitle>Change Your Plan</DialogTitle>
           <DialogDescription>
-            Current plan: <strong>{SUBSCRIPTION_PLANS[currentPlan].name}</strong> ({SUBSCRIPTION_PLANS[currentPlan].priceDisplay})
+            Current plan: <strong>{getPlan(currentPlan)?.name || currentPlan}</strong> ({getPlan(currentPlan)?.priceDisplay || 'N/A'})
           </DialogDescription>
         </DialogHeader>
 
+        {loadingPlans ? (
+          <div className="flex items-center justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        ) : (
+
         <div className="space-y-4">
-          {availablePlans.map((plan) => {
-            const planDetails = SUBSCRIPTION_PLANS[plan]
-            const warnings = getDowngradeWarnings(plan)
-            const isSelected = selectedPlan === plan
+          {availablePlans.map((planId) => {
+            const planDetails = getPlan(planId)
+            if (!planDetails) return null
+            const warnings = getDowngradeWarnings(planId)
+            const isSelected = selectedPlan === planId
             const planPrice = planDetails.price
-            const currentPrice = SUBSCRIPTION_PLANS[currentPlan].price
+            const currentPlanData = getPlan(currentPlan)
+            const currentPrice = currentPlanData?.price || 0
             const isUpgradePlan = planPrice > currentPrice
 
             return (
               <button
-                key={plan}
-                onClick={() => setSelectedPlan(plan)}
+                key={planId}
+                onClick={() => setSelectedPlan(planId)}
                 className={`w-full text-left p-4 border rounded-lg transition-all ${
                   isSelected
                     ? 'border-blue-500 bg-blue-50 dark:bg-blue-950'
@@ -228,7 +271,7 @@ export function PlanSelectionDialog({
                     </p>
                     <p className="text-gray-600 dark:text-gray-400">
                       Starting next billing cycle: 
-                      <strong className="ml-1">${SUBSCRIPTION_PLANS[selectedPlan].price}/month</strong>
+                      <strong className="ml-1">{getPlan(selectedPlan)?.priceDisplay || 'N/A'}</strong>
                     </p>
                   </>
                 ) : null
@@ -238,6 +281,7 @@ export function PlanSelectionDialog({
               </p>
             </div>
           </div>
+        )}
         )}
 
         <DialogFooter>
