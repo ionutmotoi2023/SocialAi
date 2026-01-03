@@ -97,6 +97,27 @@ export default function BillingSettingsPage() {
     setShowPlanDialog(true)
   }
 
+  const handleManagePayment = async () => {
+    try {
+      const response = await fetch('/api/subscription/portal', {
+        method: 'POST'
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Failed to open billing portal')
+      }
+
+      // Redirect to Stripe Billing Portal
+      if (data.url) {
+        window.location.href = data.url
+      }
+    } catch (error: any) {
+      toast.error(error.message || 'Failed to open billing portal')
+    }
+  }
+
   const handleCancelSubscription = async () => {
     if (!confirm('Are you sure you want to cancel your subscription? You will lose access to premium features at the end of your billing period.')) {
       return
@@ -288,6 +309,12 @@ export default function BillingSettingsPage() {
               <Button onClick={handleUpgrade}>
                 <ArrowUpRight className="h-4 w-4 mr-2" />
                 Upgrade Plan
+              </Button>
+            )}
+            {subscription.stripeCustomerId && (
+              <Button variant="outline" onClick={handleManagePayment}>
+                <CreditCard className="h-4 w-4 mr-2" />
+                Manage Payment
               </Button>
             )}
             {subscription.status === 'ACTIVE' && (
