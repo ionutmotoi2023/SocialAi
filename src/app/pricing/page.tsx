@@ -1,24 +1,41 @@
 'use client'
 
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
 import { Button } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { Check, Zap, ArrowRight } from 'lucide-react'
-import { SUBSCRIPTION_PLANS, SubscriptionPlanType } from '@/lib/subscription-plans'
+import { Check, Zap, ArrowRight, Loader2 } from 'lucide-react'
+import type { PricingPlan } from '@/lib/pricing-utils'
 
 export default function PricingPage() {
   const router = useRouter()
   const [billingCycle, setBillingCycle] = useState<'monthly' | 'yearly'>('monthly')
+  const [plans, setPlans] = useState<PricingPlan[]>([])
+  const [loading, setLoading] = useState(true)
 
-  const plans: SubscriptionPlanType[] = ['FREE', 'STARTER', 'PROFESSIONAL', 'ENTERPRISE']
+  useEffect(() => {
+    fetchPricing()
+  }, [])
 
-  const handleSelectPlan = (plan: SubscriptionPlanType) => {
+  const fetchPricing = async () => {
+    try {
+      const response = await fetch('/api/pricing')
+      if (!response.ok) throw new Error('Failed to fetch pricing')
+      const data = await response.json()
+      setPlans(data.plans)
+    } catch (error) {
+      console.error('Error fetching pricing:', error)
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  const handleSelectPlan = (planId: string) => {
     // Redirect to registration with pre-selected plan
-    router.push(`/register?plan=${plan}`)
+    router.push(`/register?plan=${planId}`)
   }
 
   return (
@@ -88,79 +105,83 @@ export default function PricingPage() {
 
       {/* Pricing Cards */}
       <section className="container mx-auto px-4 pb-16">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
-          {plans.map((planKey) => {
-            const plan = SUBSCRIPTION_PLANS[planKey]
-            const isPopular = plan.popular
-            const monthlyPrice = plan.price / 100
-            const yearlyPrice = (monthlyPrice * 12 * 0.8) / 12 // 20% discount
-            const displayPrice = billingCycle === 'monthly' ? monthlyPrice : yearlyPrice
+        {loading ? (
+          <div className="flex justify-center items-center py-12">
+            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 max-w-7xl mx-auto">
+            {plans.map((plan) => {
+              const monthlyPrice = plan.price / 100
+              const yearlyPrice = (monthlyPrice * 12 * 0.8) / 12 // 20% discount
+              const displayPrice = billingCycle === 'monthly' ? monthlyPrice : yearlyPrice
 
-            return (
-              <Card 
-                key={planKey}
-                className={`relative flex flex-col ${
-                  isPopular 
-                    ? 'border-primary shadow-lg scale-105' 
-                    : 'border-border'
-                }`}
-              >
-                {isPopular && (
-                  <div className="absolute -top-4 left-0 right-0 flex justify-center">
-                    <Badge className="bg-primary">Most Popular</Badge>
-                  </div>
-                )}
+              return (
+                <Card 
+                  key={plan.planId}
+                  className={`relative flex flex-col ${
+                    plan.isPopular 
+                      ? 'border-primary shadow-lg scale-105' 
+                      : 'border-border'
+                  }`}
+                >
+                  {plan.isPopular && (
+                    <div className="absolute -top-4 left-0 right-0 flex justify-center">
+                      <Badge className="bg-primary">Most Popular</Badge>
+                    </div>
+                  )}
 
-                <CardHeader>
-                  <CardTitle className="text-2xl">{plan.name}</CardTitle>
-                  <CardDescription>{plan.description}</CardDescription>
-                </CardHeader>
+                  <CardHeader>
+                    <CardTitle className="text-2xl">{plan.name}</CardTitle>
+                    <CardDescription>{plan.description}</CardDescription>
+                  </CardHeader>
 
-                <CardContent className="flex-1 space-y-6">
-                  {/* Price */}
-                  <div>
-                    {planKey === 'FREE' ? (
-                      <div className="text-4xl font-bold">Free</div>
-                    ) : (
-                      <>
-                        <div className="text-4xl font-bold">
-                          ${displayPrice.toFixed(0)}
-                          <span className="text-lg font-normal text-muted-foreground">/mo</span>
-                        </div>
-                        {billingCycle === 'yearly' && (
-                          <p className="text-sm text-muted-foreground mt-1">
-                            ${(yearlyPrice * 12).toFixed(0)} billed annually
-                          </p>
-                        )}
-                      </>
-                    )}
-                  </div>
+                  <CardContent className="flex-1 space-y-6">
+                    {/* Price */}
+                    <div>
+                      {plan.planId === 'FREE' ? (
+                        <div className="text-4xl font-bold">Free</div>
+                      ) : (
+                        <>
+                          <div className="text-4xl font-bold">
+                            ${displayPrice.toFixed(0)}
+                            <span className="text-lg font-normal text-muted-foreground">/mo</span>
+                          </div>
+                          {billingCycle === 'yearly' && (
+                            <p className="text-sm text-muted-foreground mt-1">
+                              ${(yearlyPrice * 12).toFixed(0)} billed annually
+                            </p>
+                          )}
+                        </>
+                      )}
+                    </div>
 
-                  {/* Features */}
-                  <ul className="space-y-3">
-                    {plan.features.map((feature, index) => (
-                      <li key={index} className="flex items-start gap-2">
-                        <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
-                        <span className="text-sm">{feature}</span>
-                      </li>
-                    ))}
-                  </ul>
-                </CardContent>
+                    {/* Features */}
+                    <ul className="space-y-3">
+                      {plan.features.map((feature, index) => (
+                        <li key={index} className="flex items-start gap-2">
+                          <Check className="h-5 w-5 text-primary flex-shrink-0 mt-0.5" />
+                          <span className="text-sm">{feature}</span>
+                        </li>
+                      ))}
+                    </ul>
+                  </CardContent>
 
-                <CardFooter>
-                  <Button
-                    className="w-full"
-                    variant={isPopular ? 'default' : 'outline'}
-                    onClick={() => handleSelectPlan(planKey)}
-                  >
-                    {planKey === 'FREE' ? 'Start Free' : 'Start 14-Day Trial'}
-                    <ArrowRight className="h-4 w-4 ml-2" />
-                  </Button>
-                </CardFooter>
-              </Card>
-            )
-          })}
-        </div>
+                  <CardFooter>
+                    <Button
+                      className="w-full"
+                      variant={plan.isPopular ? 'default' : 'outline'}
+                      onClick={() => handleSelectPlan(plan.planId)}
+                    >
+                      {plan.planId === 'FREE' ? 'Start Free' : 'Start 14-Day Trial'}
+                      <ArrowRight className="h-4 w-4 ml-2" />
+                    </Button>
+                  </CardFooter>
+                </Card>
+              )
+            })}
+          </div>
+        )}
       </section>
 
       {/* FAQ Section */}
