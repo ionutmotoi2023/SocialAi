@@ -223,3 +223,101 @@ Sent from socialai.mindloop.ro
 
   return result
 }
+
+// Send team invitation email
+export async function sendInvitationEmail(
+  email: string,
+  invitation: {
+    id: string
+    role: string
+    inviter: {
+      name: string | null
+      email: string
+    } | null
+  },
+  tenantName?: string
+) {
+  const inviterName = invitation.inviter?.name || invitation.inviter?.email || 'A team member'
+  const roleName = invitation.role.replace('_', ' ')
+  const appName = process.env.NEXT_PUBLIC_APP_NAME || 'SocialAI'
+  const appUrl = process.env.NEXTAUTH_URL || 'https://socialai.mindloop.ro'
+  const acceptUrl = `${appUrl}/accept-invitation?token=${invitation.id}`
+
+  const htmlContent = `
+    <!DOCTYPE html>
+    <html>
+    <head>
+      <meta charset="utf-8">
+      <style>
+        body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
+        .container { max-width: 600px; margin: 0 auto; padding: 20px; }
+        .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 30px; border-radius: 10px 10px 0 0; text-align: center; }
+        .content { background: #f9f9f9; padding: 30px; border-radius: 0 0 10px 10px; }
+        .button { display: inline-block; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; font-weight: bold; }
+        .info { background: white; padding: 15px; border-radius: 5px; margin: 15px 0; border-left: 3px solid #667eea; }
+        .footer { text-align: center; margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; color: #666; font-size: 12px; }
+      </style>
+    </head>
+    <body>
+      <div class="container">
+        <div class="header">
+          <h1 style="margin: 0; font-size: 28px;">🎉 You're Invited!</h1>
+        </div>
+        <div class="content">
+          <p><strong>${inviterName}</strong> has invited you to join their team${tenantName ? ` at <strong>${tenantName}</strong>` : ''} on ${appName}.</p>
+          
+          <div class="info">
+            <p style="margin: 5px 0;"><strong>👤 Your Role:</strong> ${roleName}</p>
+            <p style="margin: 5px 0;"><strong>📧 Email:</strong> ${email}</p>
+          </div>
+
+          <p>Click the button below to accept the invitation and create your account:</p>
+          
+          <div style="text-align: center;">
+            <a href="${acceptUrl}" class="button">Accept Invitation</a>
+          </div>
+
+          <p style="font-size: 13px; color: #666;">Or copy and paste this link in your browser:<br>
+          <a href="${acceptUrl}" style="color: #667eea; word-break: break-all;">${acceptUrl}</a></p>
+
+          <p style="margin-top: 30px; padding-top: 20px; border-top: 1px solid #ddd; font-size: 13px; color: #666;">
+            <strong>Note:</strong> This invitation will expire in 7 days. If you don't accept it by then, you'll need to request a new invitation.
+          </p>
+        </div>
+        
+        <div class="footer">
+          <p>This email was sent from ${appName}</p>
+          <p>If you didn't expect this invitation, you can safely ignore this email.</p>
+        </div>
+      </div>
+    </body>
+    </html>
+  `
+
+  const textContent = `
+You're Invited to Join ${appName}!
+
+${inviterName} has invited you to join their team${tenantName ? ` at ${tenantName}` : ''}.
+
+Your Role: ${roleName}
+Email: ${email}
+
+To accept this invitation and create your account, click the link below:
+${acceptUrl}
+
+This invitation will expire in 7 days.
+
+If you didn't expect this invitation, you can safely ignore this email.
+
+---
+${appName}
+  `
+
+  console.log('Sending invitation email to:', email)
+  return await sendEmail({
+    to: email,
+    subject: `You're invited to join ${tenantName || 'a team'} on ${appName}`,
+    text: textContent,
+    html: htmlContent,
+  })
+}
