@@ -2,6 +2,7 @@ export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
 import { sendContactFormEmail } from '@/lib/email'
+import { prisma } from '@/lib/prisma'
 import { z } from 'zod'
 
 // Validation schema
@@ -32,50 +33,90 @@ export async function POST(req: NextRequest) {
 
     const formData = validationResult.data
 
+    // Get IP and User Agent for logging
+    const ipAddress = req.headers.get('x-forwarded-for') || req.headers.get('x-real-ip') || 'unknown'
+    const userAgent = req.headers.get('user-agent') || 'unknown'
+
     // Check SMTP configuration
-    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
-      console.error('SMTP configuration missing')
-      return NextResponse.json(
-        { error: 'Email service not configured. Please contact office@mindloop.ro directly.' },
-        { status: 503 }
-      )
+    const smtpConfigured = !!(process.env.SMTP_HOST && process.env.SMTP_USER && process.env.SMTP_PASSWORD)
+
+    if (smtpConfigured) {
+      // Try to send email via SMTP
+      console.log('Sending contact form email via SMTP:', {
+        name: formData.name,
+        email: formData.email,
+        subject: formData.subject,
+      })
+
+      const result = await sendContactFormEmail(formData)
+
+      if (result.success) {
+        // Also save to database for backup
+        await prisma.contactMessage.create({
+          data: {
+            name: formData.name,
+            email: formData.email,
+            company: formData.company || null,
+            subject: formData.subject,
+            message: formData.message,
+            status: 'NEW',
+            ipAddress,
+            userAgent,
+          },
+        })
+
+        return NextResponse.json({
+          success: true,
+          message: 'Your message has been sent successfully! We\'ll get back to you within 24 hours.',
+          messageId: result.messageId,
+        })
+      } else {
+        console.error('Failed to send email via SMTP:', result.error)
+        // Fall through to database-only save
+      }
     }
 
-    // Send email
-    console.log('Sending contact form email:', {
+    // Fallback: Save to database only (when SMTP not configured or failed)
+    console.log('Saving contact form to database (SMTP not available):', {
       name: formData.name,
       email: formData.email,
       subject: formData.subject,
     })
 
-    const result = await sendContactFormEmail(formData)
+    const savedMessage = await prisma.contactMessage.create({
+      data: {
+        name: formData.name,
+        email: formData.email,
+        company: formData.company || null,
+        subject: formData.subject,
+        message: formData.message,
+        status: 'NEW',
+        ipAddress,
+        userAgent,
+      },
+    })
 
-    if (!result.success) {
-      console.error('Failed to send email:', result.error)
-      return NextResponse.json(
-        { 
-          error: 'Failed to send email. Please try again or contact office@mindloop.ro directly.',
-          fallbackEmail: 'office@mindloop.ro',
-          fallbackPhone: '+40726327192',
-        },
-        { status: 500 }
-      )
-    }
-
-    // Success response
+    // Success response (database saved)
     return NextResponse.json({
       success: true,
-      message: 'Your message has been sent successfully! We\'ll get back to you within 24 hours.',
-      messageId: result.messageId,
+      message: 'Your message has been received! We\'ll get back to you within 24 hours.',
+      savedToDatabase: true,
+      messageId: savedMessage.id,
+      fallbackInfo: {
+        email: 'office@mindloop.ro',
+        phone: '+40726327192',
+        note: 'For urgent matters, please call us directly.',
+      },
     })
 
   } catch (error) {
     console.error('Contact form error:', error)
     return NextResponse.json(
       { 
-        error: 'An unexpected error occurred. Please contact office@mindloop.ro directly.',
+        error: 'An unexpected error occurred. Please contact us directly.',
         fallbackEmail: 'office@mindloop.ro',
         fallbackPhone: '+40726327192',
+        details: error instanceof Error ? error.message : 'Unknown error',
       },
       { status: 500 }
     )

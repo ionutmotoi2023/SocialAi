@@ -434,3 +434,30 @@ model Invoice {
   @@index([tenantId])
   @@map("invoices")
 }
+
+// Contact form messages (fallback when SMTP is not configured)
+enum ContactMessageStatus {
+  NEW
+  READ
+  REPLIED
+  ARCHIVED
+}
+
+model ContactMessage {
+  id        String               @id @default(cuid())
+  name      String
+  email     String
+  company   String?
+  subject   String
+  message   String               @db.Text
+  status    ContactMessageStatus @default(NEW)
+  ipAddress String?
+  userAgent String?
+  createdAt DateTime             @default(now())
+  readAt    DateTime?
+  repliedAt DateTime?
+
+  @@index([status])
+  @@index([createdAt])
+  @@map("contact_messages")
+}
