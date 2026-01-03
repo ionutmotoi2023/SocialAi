@@ -255,6 +255,7 @@ export function PlanSelectionDialog({
             )
           })}
         </div>
+        )}
 
         {selectedPlan && (
           <div className="mt-4 p-4 bg-gray-50 dark:bg-gray-900 rounded-lg">
