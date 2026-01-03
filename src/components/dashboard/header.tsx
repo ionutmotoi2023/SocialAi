@@ -1,6 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
 import { Bell, Search } from 'lucide-react'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
@@ -12,6 +13,7 @@ interface Subscription {
 }
 
 export function DashboardHeader() {
+  const router = useRouter()
   const [subscription, setSubscription] = useState<Subscription | null>(null)
   const [loading, setLoading] = useState(true)
 
@@ -65,6 +67,11 @@ export function DashboardHeader() {
     }
   }
 
+  const handlePlanClick = () => {
+    // Redirect to billing page where user can upgrade/manage plan
+    router.push('/dashboard/settings/billing')
+  }
+
   return (
     <header className="bg-white border-b border-gray-200 px-6 py-4">
       <div className="flex items-center justify-between">
@@ -93,8 +100,12 @@ export function DashboardHeader() {
             </Badge>
           </Button>
 
-          {/* Plan Badge - Dynamic from DB */}
-          <Badge variant={getPlanVariant() as any} className="font-normal">
+          {/* Plan Badge - Dynamic from DB, Clickable */}
+          <Badge 
+            variant={getPlanVariant() as any} 
+            className="font-normal cursor-pointer hover:opacity-80 transition-opacity"
+            onClick={handlePlanClick}
+          >
             {getPlanDisplay()}
           </Badge>
         </div>
