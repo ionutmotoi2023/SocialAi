@@ -11,7 +11,8 @@ import { Badge } from '@/components/ui/badge'
 import { useToast } from '@/hooks/use-toast'
 import { 
   Zap, Play, Pause, Settings as SettingsIcon, Calendar,
-  Clock, Target, TrendingUp, Sparkles, AlertCircle, CheckCircle2
+  Clock, Target, TrendingUp, Sparkles, AlertCircle, CheckCircle2,
+  HardDrive, Cloud
 } from 'lucide-react'
 
 interface AutoPilotConfig {
@@ -22,6 +23,11 @@ interface AutoPilotConfig {
   preferredTimes: string[]
   topics: string[]
   imageCount: number // ✅ NEW: Number of images per post
+  // ✅ Drive Sync settings
+  enableDriveSync?: boolean
+  driveAutoAnalyze?: boolean
+  driveAutoGenerate?: boolean
+  driveAutoApprove?: boolean
 }
 
 export default function AutoPilotPage() {
@@ -35,6 +41,11 @@ export default function AutoPilotPage() {
     preferredTimes: ['09:00', '12:00', '17:00'],
     topics: [],
     imageCount: 1, // ✅ NEW: Default 1 image per post
+    // ✅ Drive Sync defaults
+    enableDriveSync: false,
+    driveAutoAnalyze: true,
+    driveAutoGenerate: true,
+    driveAutoApprove: false,
   })
   const [loading, setLoading] = useState(true)
   const [saving, setSaving] = useState(false)
@@ -488,6 +499,168 @@ export default function AutoPilotPage() {
           </CardContent>
         </Card>
       </div>
+
+      {/* Drive Sync Settings */}
+      <Card className="border-2 border-green-200 bg-green-50/30">
+        <CardHeader>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <HardDrive className="h-5 w-5 text-green-600" />
+              <CardTitle>Google Drive Auto-Sync</CardTitle>
+              <Badge className="bg-green-500">Beta</Badge>
+            </div>
+          </div>
+          <CardDescription>
+            Automatically create posts from images and videos in your Google Drive
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-6">
+          {/* Enable Drive Sync */}
+          <div className="flex items-center justify-between p-4 bg-white rounded-lg border">
+            <div className="flex items-center gap-3">
+              <div className="h-10 w-10 rounded-full bg-green-100 flex items-center justify-center">
+                <Cloud className="h-5 w-5 text-green-600" />
+              </div>
+              <div>
+                <h4 className="font-semibold">Enable Drive Sync</h4>
+                <p className="text-sm text-muted-foreground">
+                  Monitor Google Drive for new media files
+                </p>
+              </div>
+            </div>
+            <Button
+              variant={config.enableDriveSync ? 'default' : 'outline'}
+              size="sm"
+              className={config.enableDriveSync ? 'bg-green-600 hover:bg-green-700' : ''}
+              onClick={async () => {
+                const updatedConfig = {
+                  ...config,
+                  enableDriveSync: !config.enableDriveSync
+                }
+                setConfig(updatedConfig)
+                await saveConfig(updatedConfig)
+              }}
+            >
+              {config.enableDriveSync ? 'On' : 'Off'}
+            </Button>
+          </div>
+
+          {/* Drive Sync Options */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {/* Auto Analyze */}
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="font-medium text-sm">Auto-Analyze</h5>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!config.enableDriveSync}
+                  className={config.driveAutoAnalyze ? 'text-green-600' : 'text-gray-400'}
+                  onClick={async () => {
+                    const updatedConfig = {
+                      ...config,
+                      driveAutoAnalyze: !config.driveAutoAnalyze
+                    }
+                    setConfig(updatedConfig)
+                    await saveConfig(updatedConfig)
+                  }}
+                >
+                  {config.driveAutoAnalyze ? '✓' : '○'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Automatically analyze media with GPT-4o Vision
+              </p>
+            </div>
+
+            {/* Auto Generate */}
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="font-medium text-sm">Auto-Generate</h5>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!config.enableDriveSync}
+                  className={config.driveAutoGenerate ? 'text-green-600' : 'text-gray-400'}
+                  onClick={async () => {
+                    const updatedConfig = {
+                      ...config,
+                      driveAutoGenerate: !config.driveAutoGenerate
+                    }
+                    setConfig(updatedConfig)
+                    await saveConfig(updatedConfig)
+                  }}
+                >
+                  {config.driveAutoGenerate ? '✓' : '○'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Automatically generate posts from analyzed media
+              </p>
+            </div>
+
+            {/* Auto Approve */}
+            <div className="p-4 bg-white rounded-lg border">
+              <div className="flex items-center justify-between mb-2">
+                <h5 className="font-medium text-sm">Auto-Approve</h5>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  disabled={!config.enableDriveSync}
+                  className={config.driveAutoApprove ? 'text-green-600' : 'text-gray-400'}
+                  onClick={async () => {
+                    const updatedConfig = {
+                      ...config,
+                      driveAutoApprove: !config.driveAutoApprove
+                    }
+                    setConfig(updatedConfig)
+                    await saveConfig(updatedConfig)
+                  }}
+                >
+                  {config.driveAutoApprove ? '✓' : '○'}
+                </Button>
+              </div>
+              <p className="text-xs text-muted-foreground">
+                Auto-schedule posts that meet confidence threshold
+              </p>
+            </div>
+          </div>
+
+          {/* Info */}
+          <div className="p-4 bg-green-50 rounded-lg border border-green-200">
+            <h5 className="font-semibold text-sm text-green-900 mb-2">📷 How Drive Sync Works:</h5>
+            <ul className="text-sm text-green-800 space-y-1">
+              <li>• Upload images/videos to your synced Google Drive folder</li>
+              <li>• AI analyzes content using GPT-4o Vision (every 10 min)</li>
+              <li>• Smart grouping creates multi-image posts (every 20 min)</li>
+              <li>• Auto-generates captions and schedules posts (every 30 min)</li>
+              <li>• Posts appear in Calendar for review before publishing</li>
+            </ul>
+          </div>
+
+          {/* Quick Actions */}
+          {config.enableDriveSync && (
+            <div className="flex gap-2">
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/dashboard/settings/integrations'}
+              >
+                <HardDrive className="mr-2 h-4 w-4" />
+                Drive Settings
+              </Button>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => window.location.href = '/dashboard/drive-media'}
+              >
+                <Cloud className="mr-2 h-4 w-4" />
+                View Synced Media
+              </Button>
+            </div>
+          )}
+        </CardContent>
+      </Card>
 
       {/* Preferred Times */}
       <Card>
