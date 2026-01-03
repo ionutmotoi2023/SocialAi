@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendInvitationEmail } from '@/lib/email'
 
 // GET /api/super-admin/tenants - List all tenants (SUPER_ADMIN only)
 export async function GET(request: NextRequest) {
@@ -185,24 +186,69 @@ export async function POST(request: NextRequest) {
       },
     })
 
-    // Create admin user if requested
-    let createdAdmin = null
+    // Send invitation to admin user if requested
+    let invitation = null
     if (adminUser && adminUser.email && adminUser.name) {
-      createdAdmin = await prisma.user.create({
+      // Create invitation (expires in 7 days)
+      const expiresAt = new Date()
+      expiresAt.setDate(expiresAt.getDate() + 7)
+
+      invitation = await prisma.invitation.create({
         data: {
           email: adminUser.email,
-          name: adminUser.name,
           role: 'TENANT_ADMIN',
           tenantId: tenant.id,
+          invitedBy: session.user.id,
+          status: 'PENDING',
+          expiresAt
         },
+        include: {
+          inviter: {
+            select: {
+              name: true,
+              email: true
+            }
+          },
+          tenant: {
+            select: {
+              name: true
+            }
+          }
+        }
       })
+
+      // Send invitation email
+      try {
+        console.log('📧 Sending invitation email to new tenant admin:', adminUser.email)
+        await sendInvitationEmail(
+          adminUser.email,
+          {
+            inviterName: session.user.name || 'System Administrator',
+            tenantName: tenant.name,
+            invitationLink: `${process.env.NEXTAUTH_URL}/team/invitations/accept?token=${invitation.id}`,
+            role: 'TENANT_ADMIN',
+            expiresAt: invitation.expiresAt
+          }
+        )
+        console.log('✅ Invitation email sent successfully')
+      } catch (emailError) {
+        console.error('⚠️ Failed to send invitation email:', emailError)
+        // Don't fail the whole operation if email fails
+      }
     }
 
     return NextResponse.json({ 
       success: true,
       tenant,
-      adminUser: createdAdmin,
-      message: 'Tenant created successfully',
+      invitation: invitation ? {
+        id: invitation.id,
+        email: invitation.email,
+        status: invitation.status,
+        expiresAt: invitation.expiresAt
+      } : null,
+      message: invitation 
+        ? `Tenant created successfully. Invitation email sent to ${adminUser.email}` 
+        : 'Tenant created successfully',
     })
   } catch (error: any) {
     console.error('Error creating tenant:', error)

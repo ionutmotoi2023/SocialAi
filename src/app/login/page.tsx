@@ -150,13 +150,6 @@ export default function LoginPage() {
             </div>
           </CardFooter>
         </Card>
-
-        {/* Demo Credentials */}
-        <div className="mt-4 p-4 bg-blue-50 rounded-lg border border-blue-200">
-          <p className="text-xs font-semibold text-blue-900 mb-2">Demo Credentials:</p>
-          <p className="text-xs text-blue-800">Email: admin@mindloop.ro</p>
-          <p className="text-xs text-blue-800">Password: (any password works in demo mode)</p>
-        </div>
       </div>
     </div>
   )
