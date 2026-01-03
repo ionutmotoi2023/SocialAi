@@ -17,31 +17,31 @@ export async function GET(req: NextRequest) {
       return NextResponse.json({ error: 'Forbidden - SUPER_ADMIN access required' }, { status: 403 })
     }
 
-    // Fetch all pricing plans from DB
-    const dbPlans = await prisma.pricingPlan.findMany({
+    // Fetch all pricing configs from DB
+    const dbConfigs = await prisma.pricingConfig.findMany({
       orderBy: { price: 'asc' }
     })
 
     // Build response: merge DB config with defaults
     const plans = Object.keys(SUBSCRIPTION_PLANS).map(planId => {
       const defaultPlan = SUBSCRIPTION_PLANS[planId as SubscriptionPlanType]
-      const dbPlan = dbPlans.find(p => p.planId === planId)
+      const dbConfig = dbConfigs.find(p => p.plan === planId)
 
-      if (dbPlan) {
+      if (dbConfig) {
         // Use DB config
-        const limits = dbPlan.limits as { posts: number; users: number; aiCredits: number }
+        const features = Array.isArray(dbConfig.features) ? dbConfig.features : JSON.parse(dbConfig.features as string)
         return {
-          id: dbPlan.id,
-          plan: dbPlan.planId,
-          name: dbPlan.name,
-          description: dbPlan.description,
-          price: dbPlan.price,
-          priceDisplay: dbPlan.priceDisplay,
-          postsLimit: limits.posts,
-          usersLimit: limits.users,
-          aiCreditsLimit: limits.aiCredits,
-          features: dbPlan.features,
-          popular: dbPlan.isPopular,
+          id: dbConfig.id,
+          plan: dbConfig.plan,
+          name: dbConfig.name,
+          description: dbConfig.description,
+          price: dbConfig.price,
+          priceDisplay: dbConfig.priceDisplay,
+          postsLimit: dbConfig.postsLimit,
+          usersLimit: dbConfig.usersLimit,
+          aiCreditsLimit: dbConfig.aiCreditsLimit,
+          features: features,
+          popular: dbConfig.popular,
           isCustomized: true
         }
       } else {
@@ -110,30 +110,32 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Features must be a non-empty array' }, { status: 400 })
     }
 
-    // Upsert pricing plan
-    const updatedPlan = await prisma.pricingPlan.upsert({
-      where: { planId },
+    // Upsert pricing config
+    const updatedPlan = await prisma.pricingConfig.upsert({
+      where: { plan: planId },
       update: {
         name,
         description,
         price,
         priceDisplay,
-        limits,
-        features,
-        isActive,
-        isPopular,
+        postsLimit: limits.posts,
+        usersLimit: limits.users,
+        aiCreditsLimit: limits.aiCredits,
+        features: features,
+        popular: isPopular,
         updatedAt: new Date()
       },
       create: {
-        planId,
+        plan: planId,
         name,
         description,
         price,
         priceDisplay,
-        limits,
-        features,
-        isActive,
-        isPopular
+        postsLimit: limits.posts,
+        usersLimit: limits.users,
+        aiCreditsLimit: limits.aiCredits,
+        features: features,
+        popular: isPopular
       }
     })
 
@@ -172,8 +174,8 @@ export async function DELETE(req: NextRequest) {
     }
 
     // Delete custom config (will fall back to defaults)
-    await prisma.pricingPlan.delete({
-      where: { planId }
+    await prisma.pricingConfig.delete({
+      where: { plan: planId }
     })
 
     return NextResponse.json({

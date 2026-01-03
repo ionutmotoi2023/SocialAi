@@ -23,29 +23,32 @@ export interface PricingPlan {
  */
 export async function getPricingPlans(): Promise<PricingPlan[]> {
   try {
-    // Fetch custom pricing from DB
-    const dbPlans = await prisma.pricingPlan.findMany({
-      where: { isActive: true },
+    // Fetch custom pricing from DB (using PricingConfig model)
+    const dbConfigs = await prisma.pricingConfig.findMany({
       orderBy: { price: 'asc' }
     })
 
     // Build final plans list
     const plans: PricingPlan[] = Object.keys(SUBSCRIPTION_PLANS).map(planId => {
       const defaultPlan = SUBSCRIPTION_PLANS[planId as SubscriptionPlanType]
-      const dbPlan = dbPlans.find(p => p.planId === planId)
+      const dbConfig = dbConfigs.find(p => p.plan === planId)
 
-      if (dbPlan) {
+      if (dbConfig) {
         // Use DB config (override)
         return {
-          planId: dbPlan.planId,
-          name: dbPlan.name,
-          description: dbPlan.description,
-          price: dbPlan.price,
-          priceDisplay: dbPlan.priceDisplay,
-          limits: dbPlan.limits as { posts: number; users: number; aiCredits: number },
-          features: dbPlan.features,
-          isActive: dbPlan.isActive,
-          isPopular: dbPlan.isPopular
+          planId: dbConfig.plan,
+          name: dbConfig.name,
+          description: dbConfig.description,
+          price: dbConfig.price,
+          priceDisplay: dbConfig.priceDisplay,
+          limits: {
+            posts: dbConfig.postsLimit,
+            users: dbConfig.usersLimit,
+            aiCredits: dbConfig.aiCreditsLimit
+          },
+          features: Array.isArray(dbConfig.features) ? dbConfig.features : JSON.parse(dbConfig.features as string),
+          isActive: true,
+          isPopular: dbConfig.popular
         }
       } else {
         // Use default config
@@ -90,23 +93,27 @@ export async function getPricingPlans(): Promise<PricingPlan[]> {
  */
 export async function getPricingPlan(planId: SubscriptionPlanType): Promise<PricingPlan | null> {
   try {
-    const dbPlan = await prisma.pricingPlan.findUnique({
-      where: { planId }
+    const dbConfig = await prisma.pricingConfig.findUnique({
+      where: { plan: planId }
     })
 
     const defaultPlan = SUBSCRIPTION_PLANS[planId]
 
-    if (dbPlan && dbPlan.isActive) {
+    if (dbConfig) {
       return {
-        planId: dbPlan.planId,
-        name: dbPlan.name,
-        description: dbPlan.description,
-        price: dbPlan.price,
-        priceDisplay: dbPlan.priceDisplay,
-        limits: dbPlan.limits as { posts: number; users: number; aiCredits: number },
-        features: dbPlan.features,
-        isActive: dbPlan.isActive,
-        isPopular: dbPlan.isPopular
+        planId: dbConfig.plan,
+        name: dbConfig.name,
+        description: dbConfig.description,
+        price: dbConfig.price,
+        priceDisplay: dbConfig.priceDisplay,
+        limits: {
+          posts: dbConfig.postsLimit,
+          users: dbConfig.usersLimit,
+          aiCredits: dbConfig.aiCreditsLimit
+        },
+        features: Array.isArray(dbConfig.features) ? dbConfig.features : JSON.parse(dbConfig.features as string),
+        isActive: true,
+        isPopular: dbConfig.popular
       }
     }
 
