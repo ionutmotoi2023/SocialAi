@@ -2,6 +2,7 @@ import { NextResponse } from 'next/server'
 import { getPricingPlans } from '@/lib/pricing-utils'
 
 // GET /api/pricing - Public endpoint for fetching pricing plans
+// Updated: 2026-01-03 - Using dynamic pricing from database
 export async function GET() {
   try {
     const plans = await getPricingPlans()
