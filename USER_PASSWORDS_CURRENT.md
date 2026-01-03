@@ -32,13 +32,14 @@
 - **Password:** `yKKDT85uYu1R`
 - **Login URL:** https://socialai.mindloop.ro/login
 
-### 4. DEMO ACCOUNT (NEW)
+### 4. DEMO ACCOUNT (FOR LINKEDIN TEAM)
 - **Name:** demo@mindloop.ro
 - **Email:** demo@mindloop.ro
 - **Tenant:** BLUE LINE SRL SRL
 - **Role:** TENANT_ADMIN
-- **Password:** `RA00LVIwqr!V`
+- **Password:** `Linkedin2025!!`
 - **Login URL:** https://socialai.mindloop.ro/login
+- **⚠️ FIXED PASSWORD:** This account uses a specific password shared with LinkedIn team
 
 ---
 
@@ -70,7 +71,7 @@
 admin@mindloop.ro       → TtHMHQdGXj8b
 editor@mindloop.ro      → AIeasAUh*Lo6
 superadmin@mindloop.ro  → yKKDT85uYu1R
-demo@mindloop.ro        → RA00LVIwqr!V
+demo@mindloop.ro        → Linkedin2025!!  (FIXED - shared with LinkedIn)
 ```
 
 ---
