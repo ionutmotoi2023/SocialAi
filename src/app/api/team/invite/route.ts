@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { sendInvitationEmail } from '@/lib/email'
 
 // POST /api/team/invite - Send team invitation
 
@@ -82,12 +83,38 @@ export async function POST(request: NextRequest) {
             name: true,
             email: true
           }
+        },
+        tenant: {
+          select: {
+            name: true
+          }
         }
       }
     })
 
-    // TODO: Send email notification
-    // await sendInvitationEmail(email, invitation)
+    // Send email notification
+    try {
+      console.log('Attempting to send invitation email to:', email)
+      const emailResult = await sendInvitationEmail(
+        email, 
+        {
+          id: invitation.id,
+          role: invitation.role,
+          inviter: invitation.inviter
+        },
+        invitation.tenant.name
+      )
+      
+      if (emailResult.success) {
+        console.log('Invitation email sent successfully:', emailResult.messageId)
+      } else {
+        console.error('Failed to send invitation email:', emailResult.error)
+        // Don't fail the request if email fails, the invitation is still created
+      }
+    } catch (emailError) {
+      console.error('Error sending invitation email:', emailError)
+      // Don't fail the request if email fails
+    }
 
     return NextResponse.json({
       invitation: {
