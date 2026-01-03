@@ -150,4 +150,70 @@ Erori posibile:
 - ✅ Validare rol și permisiuni
 
 ## Status
-✅ **REZOLVAT** - Utilizatorii invitați primesc acum email și pot accepta invitațiile.
+
+⚠️ **IMPLEMENTAT ȘI TESTAT LOCAL** - Codul a fost scris și committat
+
+### Ce s-a făcut:
+✅ Funcția `sendInvitationEmail()` adăugată în `src/lib/email.ts`  
+✅ Trimiterea emailului activată în `src/app/api/team/invite/route.ts`  
+✅ Pagină de acceptare invitație creată: `/accept-invitation`  
+✅ API-uri de validare și acceptare implementate  
+✅ Pull Request creat: https://github.com/ionutmotoi2023/SocialAi/pull/9  
+✅ Cod pushed pe branch `genspark_ai_developer`  
+
+### ⚠️ IMPORTANT - Ce trebuie făcut pentru ca modificările să fie LIVE:
+
+**PROBLEMA CURENTĂ:**  
+Serverul Railway rulează încă versiunea veche a codului (din build-ul anterior).  
+Din logs se vede că containerul a pornit ÎNAINTE de modificările mele.
+
+**SOLUȚII:**
+
+#### Opțiunea 1: Merge Pull Request (Recomandat)
+1. Mergi la: https://github.com/ionutmotoi2023/SocialAi/pull/9
+2. Review changes
+3. Click pe **"Merge pull request"**
+4. Confirmă merge
+5. Railway va detecta automat noul commit pe `main` și va redeploya
+
+#### Opțiunea 2: Manual Redeploy pe Railway
+1. Intră în dashboard-ul Railway: https://railway.app/
+2. Selectează proiectul SocialAI
+3. Mergi la Settings → Deploy
+4. Click pe **"Deploy Now"** sau **"Redeploy"**
+5. Asigură-te că deployează de pe branch-ul corect (`genspark_ai_developer` sau `main` după merge)
+
+#### Opțiunea 3: Force push pentru trigger
+```bash
+git commit --allow-empty -m "trigger: force Railway redeploy"
+git push origin genspark_ai_developer
+```
+
+### Verificare după Deploy:
+
+După ce Railway finalizează deployment-ul, verifică:
+
+1. **Logs-urile Railway** - caută mesajele:
+   ```
+   ✅ Attempting to send invitation email to: email@example.com
+   ✅ Creating SMTP transporter with config
+   ✅ Email sent successfully: <message-id>
+   ```
+
+2. **Test invitație:**
+   - Login ca admin
+   - Dashboard → Team
+   - Invită un email valid
+   - Verifică inbox-ul emailului invitat
+   - Click pe link de acceptare
+   - Completează formularul
+
+3. **Verifică că variabilele SMTP sunt configurate în Railway:**
+   - `SMTP_HOST` (ex: smtp.gmail.com)
+   - `SMTP_PORT` (ex: 587)
+   - `SMTP_USER` (emailul tău)
+   - `SMTP_PASSWORD` (app password)
+
+### Note despre SMTP:
+Tu ai menționat că **"platforma trimite deja alte emailuri"**, deci SMTP-ul este configurat corect în Railway.  
+Modificările mele doar **activează** trimiterea pentru invitații, care era comentată ca TODO.
