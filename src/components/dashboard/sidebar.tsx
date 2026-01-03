@@ -30,6 +30,49 @@ export function DashboardSidebar() {
   const router = useRouter()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [postsCount, setPostsCount] = useState<number>(0)
+  const [tenantLogo, setTenantLogo] = useState<string | null>(null)
+  const [tenantName, setTenantName] = useState<string>('AI MINDLOOP SRL')
+
+  // Fetch tenant logo and name from Brand Assets
+  useEffect(() => {
+    const fetchTenantBranding = async () => {
+      try {
+        // First try to get tenant info from session
+        if (session?.user.tenant) {
+          setTenantName(session.user.tenant.name || 'AI MINDLOOP SRL')
+          
+          // If tenant has a logo, use it
+          if (session.user.tenant.logo) {
+            setTenantLogo(session.user.tenant.logo)
+            return
+          }
+        }
+
+        // If no logo in session, try to fetch from Brand Assets API
+        const response = await fetch('/api/settings/brand-assets')
+        if (response.ok) {
+          const data = await response.json()
+          // Get the first brand asset (usually the company logo)
+          if (data.assets && data.assets.length > 0) {
+            const logoAsset = data.assets.find((asset: any) => 
+              asset.type === 'LOGO' || asset.name.toLowerCase().includes('logo')
+            )
+            if (logoAsset && logoAsset.url) {
+              setTenantLogo(logoAsset.url)
+            }
+          }
+        }
+      } catch (error) {
+        console.error('Failed to fetch tenant branding:', error)
+        // Fallback to default logo
+        setTenantLogo(null)
+      }
+    }
+    
+    if (session) {
+      fetchTenantBranding()
+    }
+  }, [session])
 
   // Fetch real posts count from API
   useEffect(() => {
@@ -150,14 +193,14 @@ export function DashboardSidebar() {
           <div className="flex items-center justify-between p-4 border-b border-gray-200">
             <Link href="/dashboard" className="flex items-center space-x-2" onClick={() => setIsMobileMenuOpen(false)}>
               <Image 
-                src="/logo.png" 
-                alt="AI MINDLOOP" 
+                src={tenantLogo || "/logo.png"}
+                alt={tenantName}
                 width={40} 
                 height={40}
-                className="rounded-lg"
+                className="rounded-lg object-contain"
               />
               <div>
-                <div className="font-bold text-base">AI MINDLOOP</div>
+                <div className="font-bold text-base">{tenantName}</div>
                 <div className="text-xs text-gray-500">Social Media AI</div>
               </div>
             </Link>
@@ -287,14 +330,14 @@ export function DashboardSidebar() {
         <div className="p-6 border-b border-gray-200 flex items-center justify-between">
           <Link href="/dashboard" className="flex items-center space-x-3">
             <Image 
-              src="/logo.png" 
-              alt="AI MINDLOOP SRL" 
+              src={tenantLogo || "/logo.png"}
+              alt={tenantName}
               width={48} 
               height={48}
-              className="rounded-lg"
+              className="rounded-lg object-contain"
             />
             <div>
-              <div className="font-bold text-lg">AI MINDLOOP SRL</div>
+              <div className="font-bold text-lg">{tenantName}</div>
               <div className="text-xs text-gray-500">Social Media AI</div>
             </div>
           </Link>
