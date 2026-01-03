@@ -76,32 +76,59 @@ export default function RegisterPage() {
         description: 'Account created successfully! Logging you in...',
       })
 
-      // Auto-login after successful registration
-      const loginResult = await signIn('credentials', {
-        email: formData.email,
-        password: formData.password,
-        redirect: false,
-      })
+      console.log('✅ Registration successful, attempting auto-login...')
 
-      if (loginResult?.error) {
-        // Registration succeeded but login failed - still redirect to login
+      // Auto-login after successful registration
+      try {
+        const loginResult = await signIn('credentials', {
+          email: formData.email,
+          password: formData.password,
+          redirect: false,
+        })
+
+        console.log('🔐 Login result:', loginResult)
+
+        if (loginResult?.error) {
+          console.error('❌ Login failed:', loginResult.error)
+          // Registration succeeded but login failed - still redirect to login
+          toast({
+            title: 'Please login',
+            description: 'Your account was created. Please login with your credentials.',
+          })
+          setTimeout(() => {
+            router.push('/login')
+          }, 2000)
+        } else if (loginResult?.ok) {
+          console.log('✅ Auto-login successful! Redirecting to dashboard...')
+          // Auto-login successful - redirect to dashboard
+          toast({
+            title: 'Welcome!',
+            description: 'Your account is ready. Redirecting to dashboard...',
+          })
+          setTimeout(() => {
+            router.push('/dashboard')
+            router.refresh()
+          }, 1500)
+        } else {
+          console.warn('⚠️ Unexpected login result:', loginResult)
+          // Fallback to login page
+          toast({
+            title: 'Almost there!',
+            description: 'Please login to access your dashboard.',
+          })
+          setTimeout(() => {
+            router.push('/login')
+          }, 2000)
+        }
+      } catch (loginError) {
+        console.error('💥 Auto-login exception:', loginError)
         toast({
           title: 'Please login',
-          description: 'Your account was created. Please login with your credentials.',
+          description: 'Your account was created. Please login to continue.',
         })
         setTimeout(() => {
           router.push('/login')
         }, 2000)
-      } else if (loginResult?.ok) {
-        // Auto-login successful - redirect to dashboard
-        toast({
-          title: 'Welcome!',
-          description: 'Your account is ready. Redirecting to dashboard...',
-        })
-        setTimeout(() => {
-          router.push('/dashboard')
-          router.refresh()
-        }, 1500)
       }
     } catch (error: any) {
       toast({
