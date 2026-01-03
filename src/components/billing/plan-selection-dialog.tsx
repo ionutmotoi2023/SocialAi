@@ -282,7 +282,6 @@ export function PlanSelectionDialog({
             </div>
           </div>
         )}
-        )}
 
         <DialogFooter>
           <Button
