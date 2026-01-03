@@ -237,7 +237,7 @@ export default function ContactPageEN() {
               <CardContent>
                 <div className="space-y-3">
                   <a 
-                    href="https://www.linkedin.com/company/ai-mindloop-srl" 
+                    href="https://www.linkedin.com/company/aimindloop" 
                     target="_blank"
                     rel="noopener noreferrer"
                     className="flex items-center text-gray-700 hover:text-blue-600 transition-colors group"
