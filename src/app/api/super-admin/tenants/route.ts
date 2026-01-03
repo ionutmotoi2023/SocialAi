@@ -152,17 +152,23 @@ export async function POST(request: NextRequest) {
 
     const limits = planLimits[subscriptionPlan as keyof typeof planLimits]
 
+    const trialDuration = 14 // 14 days trial
+    const now = new Date()
+    const trialEnd = new Date(now.getTime() + trialDuration * 24 * 60 * 60 * 1000)
+
     await prisma.subscription.create({
       data: {
         tenantId: tenant.id,
         plan: subscriptionPlan,
         status: plan === 'FREE' ? 'ACTIVE' : 'TRIAL',
-        trialEndDate: plan !== 'FREE' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
-        nextBillingDate: plan !== 'FREE' ? new Date(Date.now() + 7 * 24 * 60 * 60 * 1000) : undefined,
+        amount: limits.amount / 100, // Convert cents to dollars (2900 -> 29.00)
+        billingCycle: 'monthly',
+        currentPeriodStart: now,
+        currentPeriodEnd: plan !== 'FREE' ? trialEnd : undefined,
+        trialEndsAt: plan !== 'FREE' ? trialEnd : undefined,
         postsLimit: limits.posts,
         usersLimit: limits.users,
         aiCreditsLimit: limits.aiCredits,
-        monthlyAmount: limits.amount,
       },
     })
 
