@@ -15,7 +15,8 @@ import {
   AlertCircle,
   Loader2,
   ExternalLink,
-  Eye
+  Eye,
+  Layers
 } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
@@ -125,10 +126,19 @@ export default function DrivMediaPage() {
               Images and videos synced from Google Drive
             </p>
           </div>
-          <Button onClick={fetchMedia} variant="outline">
-            <Loader2 className="mr-2 h-4 w-4" />
-            Refresh
-          </Button>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => window.location.href = '/dashboard/media-groups'}
+            >
+              <Layers className="mr-2 h-4 w-4" />
+              View Groups
+            </Button>
+            <Button onClick={fetchMedia} variant="outline">
+              <Loader2 className="mr-2 h-4 w-4" />
+              Refresh
+            </Button>
+          </div>
         </div>
       </header>
 
