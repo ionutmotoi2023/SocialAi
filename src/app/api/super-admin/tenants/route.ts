@@ -116,11 +116,24 @@ export async function POST(request: NextRequest) {
       }, { status: 400 })
     }
 
-    // Create new tenant
+    // Check if domain already exists (if provided)
+    if (domain) {
+      const existingTenant = await prisma.tenant.findUnique({
+        where: { domain }
+      })
+      
+      if (existingTenant) {
+        return NextResponse.json({ 
+          error: `Domain "${domain}" is already in use by another tenant` 
+        }, { status: 400 })
+      }
+    }
+
+    // Create new tenant (domain is optional, set to null if empty)
     const tenant = await prisma.tenant.create({
       data: {
         name,
-        domain,
+        domain: domain || null,
         website,
         industry,
         description,
