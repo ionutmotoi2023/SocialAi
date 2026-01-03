@@ -1,5 +1,3 @@
-import nodemailer from 'nodemailer'
-
 interface EmailOptions {
   to: string
   subject: string
@@ -15,26 +13,60 @@ interface ContactFormData {
   message: string
 }
 
-// Create SMTP transporter
-const createTransporter = () => {
-  const config = {
-    host: process.env.SMTP_HOST || 'smtp.gmail.com',
-    port: parseInt(process.env.SMTP_PORT || '587'),
-    secure: false, // true for 465, false for other ports
-    auth: {
-      user: process.env.SMTP_USER,
-      pass: process.env.SMTP_PASSWORD,
-    },
-  }
-
-  return nodemailer.createTransporter(config)
-}
-
-// Send email utility
+// Send email utility with proper error handling
 export async function sendEmail({ to, subject, text, html }: EmailOptions) {
   try {
-    const transporter = createTransporter()
+    // Try to load nodemailer dynamically
+    let nodemailer: any
+    
+    try {
+      nodemailer = require('nodemailer')
+    } catch (requireError) {
+      console.error('Failed to require nodemailer:', requireError)
+      return { 
+        success: false, 
+        error: 'Nodemailer module not available in current environment' 
+      }
+    }
 
+    // Validate nodemailer loaded correctly
+    if (!nodemailer || typeof nodemailer.createTransport !== 'function') {
+      console.error('Nodemailer loaded but createTransport not available')
+      return { 
+        success: false, 
+        error: 'Nodemailer module not properly initialized' 
+      }
+    }
+
+    // Check SMTP configuration
+    if (!process.env.SMTP_HOST || !process.env.SMTP_USER || !process.env.SMTP_PASSWORD) {
+      return {
+        success: false,
+        error: 'SMTP configuration missing (SMTP_HOST, SMTP_USER, or SMTP_PASSWORD not set)'
+      }
+    }
+
+    // Create transporter
+    const config = {
+      host: process.env.SMTP_HOST,
+      port: parseInt(process.env.SMTP_PORT || '587'),
+      secure: false, // true for 465, false for other ports
+      auth: {
+        user: process.env.SMTP_USER,
+        pass: process.env.SMTP_PASSWORD,
+      },
+    }
+
+    console.log('Creating SMTP transporter with config:', {
+      host: config.host,
+      port: config.port,
+      user: config.auth.user,
+      hasPassword: !!config.auth.pass,
+    })
+
+    const transporter = nodemailer.createTransport(config)
+
+    // Prepare email
     const mailOptions = {
       from: `"${process.env.NEXT_PUBLIC_APP_NAME || 'SocialAI'}" <${process.env.SMTP_USER}>`,
       to,
@@ -43,12 +75,18 @@ export async function sendEmail({ to, subject, text, html }: EmailOptions) {
       html: html || text,
     }
 
+    // Send email
+    console.log('Sending email to:', to)
     const info = await transporter.sendMail(mailOptions)
-    console.log('Email sent:', info.messageId)
+    console.log('Email sent successfully:', info.messageId)
+    
     return { success: true, messageId: info.messageId }
   } catch (error) {
-    console.error('Email sending failed:', error)
-    return { success: false, error: error instanceof Error ? error.message : 'Unknown error' }
+    console.error('Email sending failed with error:', error)
+    return { 
+      success: false, 
+      error: error instanceof Error ? error.message : 'Unknown email error' 
+    }
   }
 }
 
@@ -130,6 +168,7 @@ Sent from socialai.mindloop.ro
   `
 
   // Send to office email
+  console.log('Attempting to send email to office@mindloop.ro')
   const result = await sendEmail({
     to: 'office@mindloop.ro',
     subject: `[Contact Form] ${subject}`,
@@ -137,8 +176,9 @@ Sent from socialai.mindloop.ro
     html: htmlContent,
   })
 
-  // Send confirmation to user
+  // Send confirmation to user only if office email succeeded
   if (result.success) {
+    console.log('Office email sent successfully, sending confirmation to user')
     const confirmationHtml = `
       <!DOCTYPE html>
       <html>
@@ -177,6 +217,8 @@ Sent from socialai.mindloop.ro
       text: `Hi ${name},\n\nThank you for contacting AI MINDLOOP SRL. We've received your message and will get back to you within 24 hours.\n\nBest regards,\nAI MINDLOOP Team`,
       html: confirmationHtml,
     })
+  } else {
+    console.log('Office email failed, skipping user confirmation:', result.error)
   }
 
   return result
