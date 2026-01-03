@@ -21,6 +21,7 @@ import {
   Download
 } from 'lucide-react'
 import { SUBSCRIPTION_PLANS } from '@/lib/subscription-plans'
+import { PlanSelectionDialog } from '@/components/billing/plan-selection-dialog'
 import { toast } from 'sonner'
 
 // Force dynamic rendering
@@ -53,6 +54,7 @@ export default function BillingSettingsPage() {
   const router = useRouter()
   const [loading, setLoading] = useState(true)
   const [subscription, setSubscription] = useState<Subscription | null>(null)
+  const [showPlanDialog, setShowPlanDialog] = useState(false)
 
   useEffect(() => {
     if (status === 'loading') return
@@ -80,7 +82,7 @@ export default function BillingSettingsPage() {
   }
 
   const handleUpgrade = () => {
-    router.push('/pricing')
+    setShowPlanDialog(true)
   }
 
   const handleCancelSubscription = async () => {
@@ -375,6 +377,20 @@ export default function BillingSettingsPage() {
             </ul>
           </CardContent>
         </Card>
+      )}
+
+      {/* Plan Selection Dialog */}
+      {subscription && (
+        <PlanSelectionDialog
+          open={showPlanDialog}
+          onOpenChange={setShowPlanDialog}
+          currentPlan={subscription.plan as any}
+          currentUsage={{
+            postsUsed: subscription.postsUsed,
+            usersUsed: subscription.usersUsed,
+            aiCreditsUsed: subscription.aiCreditsUsed
+          }}
+        />
       )}
     </div>
   )
