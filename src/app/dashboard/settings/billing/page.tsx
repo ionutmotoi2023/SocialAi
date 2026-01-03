@@ -64,6 +64,18 @@ export default function BillingSettingsPage() {
     }
 
     fetchSubscription()
+
+    // Check for Stripe Checkout success/cancel
+    const params = new URLSearchParams(window.location.search)
+    if (params.get('success') === 'true') {
+      toast.success('Payment successful! Your subscription has been upgraded.')
+      // Clean URL
+      router.replace('/dashboard/settings/billing', { scroll: false })
+    } else if (params.get('canceled') === 'true') {
+      toast.error('Payment canceled. Your subscription was not changed.')
+      // Clean URL
+      router.replace('/dashboard/settings/billing', { scroll: false })
+    }
   }, [session, status, router])
 
   const fetchSubscription = async () => {

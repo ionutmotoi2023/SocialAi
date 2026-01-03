@@ -48,32 +48,56 @@ export function PlanSelectionDialog({
     setIsLoading(true)
 
     try {
-      const response = await fetch('/api/subscription/change-plan', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ newPlan: selectedPlan })
-      })
+      const upgrading = isUpgrade()
 
-      const data = await response.json()
+      // For upgrades (paid plans), redirect to Stripe Checkout
+      if (upgrading && selectedPlan !== 'FREE') {
+        const response = await fetch('/api/subscription/checkout', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ planId: selectedPlan })
+        })
 
-      if (!response.ok) {
-        throw new Error(data.error || 'Failed to change plan')
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to create checkout session')
+        }
+
+        // Redirect to Stripe Checkout
+        if (data.url) {
+          window.location.href = data.url
+        } else {
+          throw new Error('No checkout URL returned')
+        }
+      } else {
+        // For downgrades or FREE plan, use direct API
+        const response = await fetch('/api/subscription/change-plan', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ newPlan: selectedPlan })
+        })
+
+        const data = await response.json()
+
+        if (!response.ok) {
+          throw new Error(data.error || 'Failed to change plan')
+        }
+
+        toast({
+          title: 'Plan changed successfully',
+          description: `Your subscription has been downgraded to ${selectedPlan}.`
+        })
+
+        onOpenChange(false)
+        router.refresh()
       }
-
-      toast({
-        title: 'Plan changed successfully',
-        description: `Your subscription has been ${isUpgrade() ? 'upgraded' : 'downgraded'} to ${selectedPlan}.`
-      })
-
-      onOpenChange(false)
-      router.refresh()
     } catch (error: any) {
       toast({
         title: 'Error',
         description: error.message || 'Failed to change plan',
         variant: 'destructive'
       })
-    } finally {
       setIsLoading(false)
     }
   }
