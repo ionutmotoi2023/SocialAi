@@ -47,12 +47,27 @@ export async function GET(req: NextRequest) {
     linkedInAuthUrl.searchParams.append('client_id', clientId)
     linkedInAuthUrl.searchParams.append('redirect_uri', redirectUri)
     linkedInAuthUrl.searchParams.append('state', session.user.tenantId)
-    // Use OpenID Connect scopes + Organization Admin scope
-    // openid + profile = user profile info
-    // w_member_social = posting permissions for personal profile
-    // r_organization_admin = read organizations & posting permissions for company pages
-    // w_organization_social = posting permissions for company pages (alternative)
-    linkedInAuthUrl.searchParams.append('scope', 'openid profile w_member_social r_organization_admin w_organization_social')
+    
+    // LinkedIn OAuth Scopes Strategy:
+    // 
+    // CURRENT (until Community Management API is approved):
+    //   - openid: OpenID Connect authentication
+    //   - profile: User profile information (name, picture)
+    //   - w_member_social: Post to personal LinkedIn profile
+    // 
+    // FUTURE (after Community Management API approval):
+    //   - r_organization_admin: Read user's managed organizations
+    //   - w_organization_social: Post to company pages
+    // 
+    // NOTE: We request ONLY basic scopes now to avoid "unauthorized_scope_error".
+    // Once Community Management API is approved, uncomment the organization scopes below.
+    
+    const basicScopes = 'openid profile w_member_social'
+    // Uncomment after Community Management API approval:
+    // const orgScopes = 'r_organization_admin w_organization_social'
+    // const allScopes = `${basicScopes} ${orgScopes}`
+    
+    linkedInAuthUrl.searchParams.append('scope', basicScopes)
 
     // 🔍 LOG: Final OAuth URL
     console.log('✅ LinkedIn Auth - Redirecting to:', linkedInAuthUrl.toString())
