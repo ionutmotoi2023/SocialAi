@@ -19,7 +19,9 @@ import {
   X,
   Home,
   Shield,
-  CreditCard
+  CreditCard,
+  HardDrive,
+  Layers
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
@@ -113,6 +115,16 @@ export function DashboardSidebar() {
       href: '/dashboard/autopilot',
       icon: Zap,
       badge: 'PRO',
+    },
+    {
+      name: 'Drive Media',
+      href: '/dashboard/drive-media',
+      icon: HardDrive,
+    },
+    {
+      name: 'Media Groups',
+      href: '/dashboard/media-groups',
+      icon: Layers,
     },
     {
       name: 'Analytics',
