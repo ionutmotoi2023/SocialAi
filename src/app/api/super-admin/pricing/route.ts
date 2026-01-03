@@ -29,30 +29,34 @@ export async function GET(req: NextRequest) {
 
       if (dbPlan) {
         // Use DB config
+        const limits = dbPlan.limits as { posts: number; users: number; aiCredits: number }
         return {
-          planId: dbPlan.planId,
+          id: dbPlan.id,
+          plan: dbPlan.planId,
           name: dbPlan.name,
           description: dbPlan.description,
           price: dbPlan.price,
           priceDisplay: dbPlan.priceDisplay,
-          limits: dbPlan.limits as { posts: number; users: number; aiCredits: number },
+          postsLimit: limits.posts,
+          usersLimit: limits.users,
+          aiCreditsLimit: limits.aiCredits,
           features: dbPlan.features,
-          isActive: dbPlan.isActive,
-          isPopular: dbPlan.isPopular,
+          popular: dbPlan.isPopular,
           isCustomized: true
         }
       } else {
         // Use default config
         return {
-          planId,
+          plan: planId,
           name: defaultPlan.name,
           description: defaultPlan.description,
           price: defaultPlan.price,
           priceDisplay: defaultPlan.priceDisplay,
-          limits: defaultPlan.limits,
+          postsLimit: defaultPlan.limits.posts,
+          usersLimit: defaultPlan.limits.users,
+          aiCreditsLimit: defaultPlan.limits.aiCredits,
           features: defaultPlan.features,
-          isActive: true,
-          isPopular: defaultPlan.popular || false,
+          popular: defaultPlan.popular || false,
           isCustomized: false
         }
       }
