@@ -41,6 +41,15 @@
 - **Login URL:** https://socialai.mindloop.ro/login
 - **⚠️ FIXED PASSWORD:** This account uses a specific password shared with LinkedIn team
 
+### 5. IONUT MOTOI (TENANT ADMIN - AI MINDLOOP SRL)
+- **Name:** Ionut Dorel Motoi
+- **Email:** ionut.motoi@siteq.ro
+- **Tenant:** AI MINDLOOP SRL
+- **Role:** TENANT_ADMIN
+- **Password:** `Mindloop2026!`
+- **Login URL:** https://socialai.mindloop.ro/login
+- **✅ NEW:** Password set on 2026-01-03
+
 ---
 
 ## ⚠️ IMPORTANT NOTES
@@ -53,7 +62,7 @@
 5. Passwords regenerated with new values
 
 ### Current Status:
-- ✅ All 4 users have NEW passwords set
+- ✅ All 5 users have passwords set
 - ✅ All passwords are hashed with bcrypt
 - ✅ Email verified for all users
 - ✅ Ready for immediate login
@@ -72,6 +81,7 @@ admin@mindloop.ro       → TtHMHQdGXj8b
 editor@mindloop.ro      → AIeasAUh*Lo6
 superadmin@mindloop.ro  → yKKDT85uYu1R
 demo@mindloop.ro        → Linkedin2025!!  (FIXED - shared with LinkedIn)
+ionut.motoi@siteq.ro    → Mindloop2026!   (NEW - AI MINDLOOP SRL tenant)
 ```
 
 ---
