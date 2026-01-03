@@ -2,7 +2,7 @@
 
 export const dynamic = 'force-dynamic'
 
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useCallback, useRef } from 'react'
 import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
@@ -40,6 +40,7 @@ export default function AutoPilotPage() {
   const [saving, setSaving] = useState(false)
   const [generating, setGenerating] = useState(false)
   const [newTopic, setNewTopic] = useState('')
+  const saveTimeoutRef = useRef<NodeJS.Timeout | null>(null)
 
   useEffect(() => {
     fetchConfig()
@@ -60,6 +61,30 @@ export default function AutoPilotPage() {
       setLoading(false)
     }
   }
+
+  // Helper function to auto-save configuration changes
+  const autoSaveConfig = async (updatedConfig: AutoPilotConfig) => {
+    try {
+      await fetch('/api/autopilot/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      })
+      // Silent save - no toast notification for slider changes
+    } catch (error) {
+      console.error('Auto-save failed:', error)
+    }
+  }
+
+  // Debounced auto-save for slider changes (saves 1 second after user stops moving slider)
+  const debouncedAutoSave = useCallback((updatedConfig: AutoPilotConfig) => {
+    if (saveTimeoutRef.current) {
+      clearTimeout(saveTimeoutRef.current)
+    }
+    saveTimeoutRef.current = setTimeout(() => {
+      autoSaveConfig(updatedConfig)
+    }, 1000) // Wait 1 second after last change
+  }, [])
 
   const saveConfig = async () => {
     setSaving(true)
@@ -151,21 +176,63 @@ export default function AutoPilotPage() {
     }
   }
 
-  const addTopic = () => {
+  const addTopic = async () => {
     if (newTopic.trim() && !config.topics.includes(newTopic.trim())) {
-      setConfig({
+      const updatedTopics = [...config.topics, newTopic.trim()]
+      const updatedConfig = {
         ...config,
-        topics: [...config.topics, newTopic.trim()]
-      })
+        topics: updatedTopics
+      }
+      setConfig(updatedConfig)
       setNewTopic('')
+      
+      // Auto-save after adding topic
+      try {
+        await fetch('/api/autopilot/config', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(updatedConfig)
+        })
+        toast({
+          title: 'Topic added',
+          description: 'Configuration saved automatically'
+        })
+      } catch (error) {
+        toast({
+          title: 'Failed to save',
+          description: 'Topic added but failed to save to server',
+          variant: 'destructive'
+        })
+      }
     }
   }
 
-  const removeTopic = (topic: string) => {
-    setConfig({
+  const removeTopic = async (topic: string) => {
+    const updatedTopics = config.topics.filter(t => t !== topic)
+    const updatedConfig = {
       ...config,
-      topics: config.topics.filter(t => t !== topic)
-    })
+      topics: updatedTopics
+    }
+    setConfig(updatedConfig)
+    
+    // Auto-save after removing topic
+    try {
+      await fetch('/api/autopilot/config', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(updatedConfig)
+      })
+      toast({
+        title: 'Topic removed',
+        description: 'Configuration saved automatically'
+      })
+    } catch (error) {
+      toast({
+        title: 'Failed to save',
+        description: 'Topic removed but failed to save to server',
+        variant: 'destructive'
+      })
+    }
   }
 
   return (
@@ -287,7 +354,11 @@ export default function AutoPilotPage() {
                 min="1"
                 max="14"
                 value={config.postsPerWeek}
-                onChange={(e) => setConfig({ ...config, postsPerWeek: parseInt(e.target.value) })}
+                onChange={(e) => {
+                  const updatedConfig = { ...config, postsPerWeek: parseInt(e.target.value) }
+                  setConfig(updatedConfig)
+                  debouncedAutoSave(updatedConfig)
+                }}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -304,7 +375,11 @@ export default function AutoPilotPage() {
                 min="50"
                 max="100"
                 value={config.confidenceThreshold * 100}
-                onChange={(e) => setConfig({ ...config, confidenceThreshold: parseInt(e.target.value) / 100 })}
+                onChange={(e) => {
+                  const updatedConfig = { ...config, confidenceThreshold: parseInt(e.target.value) / 100 }
+                  setConfig(updatedConfig)
+                  debouncedAutoSave(updatedConfig)
+                }}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -327,7 +402,11 @@ export default function AutoPilotPage() {
                 min="0"
                 max="3"
                 value={config.imageCount}
-                onChange={(e) => setConfig({ ...config, imageCount: parseInt(e.target.value) })}
+                onChange={(e) => {
+                  const updatedConfig = { ...config, imageCount: parseInt(e.target.value) }
+                  setConfig(updatedConfig)
+                  debouncedAutoSave(updatedConfig)
+                }}
                 className="w-full"
               />
               <p className="text-xs text-muted-foreground mt-1">
@@ -348,7 +427,16 @@ export default function AutoPilotPage() {
               <Button
                 variant={config.autoSchedule ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => setConfig({ ...config, autoSchedule: !config.autoSchedule })}
+                onClick={async () => {
+                  const updatedConfig = { ...config, autoSchedule: !config.autoSchedule }
+                  setConfig(updatedConfig)
+                  // Immediate save for toggle
+                  await autoSaveConfig(updatedConfig)
+                  toast({
+                    title: 'Auto-Schedule updated',
+                    description: 'Configuration saved automatically'
+                  })
+                }}
               >
                 {config.autoSchedule ? 'On' : 'Off'}
               </Button>
@@ -419,16 +507,36 @@ export default function AutoPilotPage() {
                 key={time}
                 variant={config.preferredTimes.includes(time) ? 'default' : 'outline'}
                 size="sm"
-                onClick={() => {
+                onClick={async () => {
+                  let updatedTimes
                   if (config.preferredTimes.includes(time)) {
-                    setConfig({
-                      ...config,
-                      preferredTimes: config.preferredTimes.filter(t => t !== time)
-                    })
+                    updatedTimes = config.preferredTimes.filter(t => t !== time)
                   } else {
-                    setConfig({
-                      ...config,
-                      preferredTimes: [...config.preferredTimes, time]
+                    updatedTimes = [...config.preferredTimes, time]
+                  }
+                  
+                  const updatedConfig = {
+                    ...config,
+                    preferredTimes: updatedTimes
+                  }
+                  setConfig(updatedConfig)
+                  
+                  // Auto-save after changing preferred times
+                  try {
+                    await fetch('/api/autopilot/config', {
+                      method: 'POST',
+                      headers: { 'Content-Type': 'application/json' },
+                      body: JSON.stringify(updatedConfig)
+                    })
+                    toast({
+                      title: 'Time preference updated',
+                      description: 'Configuration saved automatically'
+                    })
+                  } catch (error) {
+                    toast({
+                      title: 'Failed to save',
+                      description: 'Time updated but failed to save to server',
+                      variant: 'destructive'
                     })
                   }
                 }}
