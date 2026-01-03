@@ -151,7 +151,7 @@ export function PlanSelectionDialog({
         <DialogHeader>
           <DialogTitle>Change Your Plan</DialogTitle>
           <DialogDescription>
-            Current plan: <strong>{currentPlan}</strong> (${SUBSCRIPTION_PLANS[currentPlan].price}/month)
+            Current plan: <strong>{SUBSCRIPTION_PLANS[currentPlan].name}</strong> ({SUBSCRIPTION_PLANS[currentPlan].priceDisplay})
           </DialogDescription>
         </DialogHeader>
 
