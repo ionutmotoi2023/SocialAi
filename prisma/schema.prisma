@@ -35,6 +35,9 @@ model Tenant {
   brandTrainingData    BrandTrainingData[]
   subscriptions        Subscription[]
   invoices             Invoice[]
+  cloudStorageIntegrations CloudStorageIntegration[]
+  syncedMedia          SyncedMedia[]
+  mediaGroups          MediaGroup[]
 
   @@map("tenants")
 }
@@ -111,6 +114,48 @@ model AutoPilotConfig {
   autoSchedule        Boolean  @default(true)
   preferredTimes      String[] // ["09:00", "12:00", "17:00"]
   topics              String[] // ["AI", "Technology", "Business"]
+  
+  // Drive Sync Settings
+  enableDriveSync      Boolean @default(false)
+  driveAutoAnalyze     Boolean @default(true)
+  driveAutoGenerate    Boolean @default(false)
+  driveAutoApprove     Boolean @default(false)
+  
+  // Media Grouping Rules
+  groupingEnabled      Boolean @default(true)
+  
+  // GUIDELINE 1: Same Day Grouping
+  sameDayGrouping      Boolean @default(true)
+  sameDayMaxMedia      Int @default(10)
+  
+  // GUIDELINE 2: Sequential Upload
+  sequentialGrouping   Boolean @default(true)
+  sequentialTimeWindow Int @default(3) // Hours
+  
+  // GUIDELINE 3: Similar Topics
+  similarTopicsGrouping Boolean @default(true)
+  topicSimilarityThreshold Float @default(0.6) // 60%
+  
+  // GUIDELINE 4: Same Event Detection
+  eventDetection       Boolean @default(true)
+  eventKeywords        String[] @default([])
+  
+  // GUIDELINE 5: Folder-based Grouping
+  folderGrouping       Boolean @default(false)
+  watchFolders         String[] @default([])
+  
+  // Media limits per post
+  minMediaPerPost      Int @default(1)
+  maxMediaPerPost      Int @default(10)
+  
+  // Story preferences
+  preferStoryArc       Boolean @default(true)
+  enableChronological  Boolean @default(true)
+  
+  // Advanced settings
+  skipSingleMedia      Boolean @default(false)
+  mergeRelatedGroups   Boolean @default(false)
+  
   createdAt           DateTime @default(now())
   updatedAt           DateTime @updatedAt
 
@@ -230,11 +275,17 @@ model Post {
   userModifications String? // What user changed
   engagementScore   Float? // Actual performance
 
-  // RSS Source Tracking (NEW)
+  // RSS Source Tracking
   contentSourceId String? // Link to ContentSource that inspired this
   rssItemTitle    String? // Original RSS item title
   rssItemUrl      String? // Original RSS item URL
   rssItemDate     DateTime? // When RSS item was published
+  
+  // Drive Media Tracking
+  syncedMediaId  String? // Link to single synced media (legacy)
+  mediaGroupId   String? // Link to the media group that generated this post
+  mediaOrder     Int[]  @default([]) // Explicit order for displaying media [0, 2, 1]
+  storyArcType   String? // CHRONOLOGICAL, BEFORE_AFTER, COMPARISON, COLLECTION
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -243,6 +294,8 @@ model Post {
   tenant        Tenant         @relation(fields: [tenantId], references: [id], onDelete: Cascade)
   user          User           @relation(fields: [userId], references: [id], onDelete: Cascade)
   contentSource ContentSource? @relation(fields: [contentSourceId], references: [id], onDelete: SetNull)
+  syncedMedia   SyncedMedia[]
+  mediaGroups   MediaGroup[]
 
   @@map("posts")
 }
@@ -494,4 +547,181 @@ model PricingConfig {
   updatedAt DateTime @updatedAt
   
   @@map("pricing_configs")
+}
+
+// Cloud Storage Integrations (Google Drive, OneDrive, Dropbox)
+enum CloudStorageProvider {
+  GOOGLE_DRIVE
+  ONEDRIVE
+  DROPBOX
+}
+
+model CloudStorageIntegration {
+  id           String   @id @default(cuid())
+  tenantId     String
+  provider     CloudStorageProvider
+  accessToken  String   @db.Text
+  refreshToken String?  @db.Text
+  expiresAt    DateTime?
+  
+  // Folder/path settings
+  syncFolderPath String @default("/") // e.g., "/Social Media Content"
+  
+  // Sync settings
+  isActive         Boolean  @default(true)
+  lastSyncedAt     DateTime?
+  lastSyncedFileId String? // Track last processed file
+  
+  // Auto-pilot settings
+  autoAnalyze    Boolean @default(true)
+  autoGenerate   Boolean @default(false)
+  autoApprove    Boolean @default(false)
+  
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  
+  tenant      Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  syncedMedia SyncedMedia[]
+  
+  @@unique([tenantId, provider])
+  @@map("cloud_storage_integrations")
+}
+
+// Synced Media from Cloud Storage
+enum MediaProcessingStatus {
+  PENDING        // Just synced, not processed
+  ANALYZING      // GPT-4o analyzing
+  ANALYZED       // Analysis complete
+  GENERATING     // Generating post
+  GENERATED      // Post generated
+  FAILED         // Processing failed
+  SKIPPED        // User chose to skip
+}
+
+model SyncedMedia {
+  id                      String   @id @default(cuid())
+  tenantId                String
+  cloudStorageIntegrationId String
+  
+  // Original file info
+  originalFileName  String
+  originalFileId    String // Drive/OneDrive file ID
+  originalFileUrl   String // Direct download URL
+  originalFolderPath String
+  uploadedAt        DateTime? // When user uploaded to Drive
+  
+  // Downloaded/processed info
+  localUrl          String? // Cloudinary URL after download
+  mediaType         String  // image, video
+  fileSize          Int?
+  mimeType          String?
+  
+  // AI Analysis (INDIVIDUAL)
+  aiAnalyzed        Boolean @default(false)
+  aiAnalysisResult  Json?
+  aiDescription     String? @db.Text
+  aiSuggestedTopics String[]
+  aiDetectedObjects String[] // Objects detected (person, laptop, office, etc.)
+  aiMood            String?  // professional, casual, exciting, etc.
+  aiContext         String?  // meeting, presentation, product demo, etc.
+  
+  // Grouping info
+  isGrouped         Boolean @default(false)
+  mediaGroupId      String?
+  groupOrder        Int?    // Order within group (1, 2, 3...)
+  
+  // Post generation
+  postGenerated     Boolean @default(false)
+  postId            String?
+  
+  // Metadata extraction
+  locationData      Json?    // GPS, location tags
+  captureDate       DateTime? // When photo was taken (EXIF)
+  deviceInfo        String?  // Camera/phone used
+  
+  // Sync tracking
+  syncedAt          DateTime @default(now())
+  lastProcessedAt   DateTime?
+  processingStatus  MediaProcessingStatus @default(PENDING)
+  errorMessage      String?
+  
+  tenant       Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  integration  CloudStorageIntegration @relation(fields: [cloudStorageIntegrationId], references: [id], onDelete: Cascade)
+  mediaGroup   MediaGroup? @relation(fields: [mediaGroupId], references: [id], onDelete: SetNull)
+  posts        Post[]
+  
+  @@unique([cloudStorageIntegrationId, originalFileId])
+  @@index([tenantId, processingStatus])
+  @@index([tenantId, isGrouped, postGenerated])
+  @@map("synced_media")
+}
+
+// Media Groups for multi-image posts
+enum GroupingRule {
+  SAME_DAY           // Same upload day
+  SIMILAR_TOPICS     // Similar semantic content
+  SAME_EVENT         // Detected as same event/context
+  SEQUENTIAL         // Uploaded within X hours
+  SAME_FOLDER        // From same Drive folder
+  MANUAL             // User manually grouped
+  MIXED              // Multiple rules applied
+}
+
+enum MediaGroupStatus {
+  PENDING            // Just created, not processed
+  READY_FOR_POST     // Analysis complete, ready to generate post
+  GENERATING         // Currently generating post
+  POSTED             // Post created successfully
+  SKIPPED            // User chose to skip this group
+  FAILED             // Generation failed
+}
+
+enum StoryArcType {
+  CHRONOLOGICAL      // Timeline of events (1 → 2 → 3)
+  BEFORE_AFTER       // Transformation (before vs after)
+  COMPARISON         // Side-by-side comparison
+  COLLECTION         // Related items showcase
+  CAROUSEL           // No specific order, just collection
+}
+
+model MediaGroup {
+  id                String   @id @default(cuid())
+  tenantId          String
+  
+  // Grouping metadata
+  groupingRule      GroupingRule
+  groupingReason    String?  // Human-readable explanation
+  
+  // Temporal info
+  uploadDateStart   DateTime // Earliest upload in group
+  uploadDateEnd     DateTime // Latest upload in group
+  captureDate       DateTime? // When photos were actually taken
+  
+  // Semantic info
+  commonTopics      String[] // Topics shared across all media
+  detectedTheme     String?  // AI-detected overall theme
+  storyArc          StoryArcType?
+  
+  // Quality metrics
+  groupConfidence   Float @default(0.0)
+  mediaCount        Int
+  
+  // Post generation
+  status            MediaGroupStatus @default(PENDING)
+  postIds           String[] @default([]) // Array of generated post IDs
+  
+  // Settings snapshot
+  maxMediaPerPost   Int @default(10)
+  minMediaPerPost   Int @default(1)
+  
+  createdAt         DateTime @default(now())
+  processedAt       DateTime?
+  
+  tenant     Tenant @relation(fields: [tenantId], references: [id], onDelete: Cascade)
+  media      SyncedMedia[]
+  posts      Post[]
+  
+  @@index([tenantId, status])
+  @@index([tenantId, createdAt])
+  @@map("media_groups")
 }
