@@ -86,6 +86,14 @@ export async function POST(request: NextRequest) {
       }
     })
 
+    // If this is a logo type, update tenant logo
+    if (type === 'logo' || type === 'LOGO') {
+      await prisma.tenant.update({
+        where: { id: session.user.tenantId },
+        data: { logo: fileUrl },
+      })
+    }
+
     return NextResponse.json({ 
       asset,
       message: 'Brand asset created successfully' 
