@@ -43,6 +43,8 @@ export const authOptions: NextAuthOptions = {
           throw new Error('Email and password required')
         }
 
+        console.log('🔐 [AUTH] Login attempt for:', credentials.email)
+
         // Find user by email
         const user = await prisma.user.findUnique({
           where: {
@@ -61,20 +63,35 @@ export const authOptions: NextAuthOptions = {
         })
 
         if (!user) {
+          console.error('❌ [AUTH] User not found:', credentials.email)
           throw new Error('Invalid email or password')
         }
 
+        console.log('✅ [AUTH] User found:', {
+          email: user.email,
+          hasPassword: !!user.password,
+          passwordLength: user.password?.length || 0
+        })
+
         // Check password only if user has a password set (credentials login)
         if (!user.password) {
+          console.error('❌ [AUTH] User has no password:', credentials.email)
           throw new Error('This account uses OAuth authentication. Please sign in with LinkedIn.')
         }
+
+        console.log('🔒 [AUTH] Comparing password for:', credentials.email)
 
         // Verify password
         const isPasswordValid = await compare(credentials.password, user.password)
 
+        console.log('🔓 [AUTH] Password comparison result:', isPasswordValid)
+
         if (!isPasswordValid) {
+          console.error('❌ [AUTH] Invalid password for:', credentials.email)
           throw new Error('Invalid email or password')
         }
+
+        console.log('✅ [AUTH] Login successful for:', credentials.email)
 
         return {
           id: user.id,
