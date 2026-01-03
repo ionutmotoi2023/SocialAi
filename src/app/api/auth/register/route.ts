@@ -49,17 +49,15 @@ export async function POST(req: NextRequest) {
     })
 
     // Hash password
-    // TODO: In production, use proper password hashing
-    // const passwordHash = await hash(password, 12)
-    
-    // For demo, we'll skip password hashing
-    // In production, add a passwordHash field to the User model
+    const hashedPassword = await hash(password, 12)
 
     // Create user with TENANT_ADMIN role
     const user = await prisma.user.create({
       data: {
         email,
         name,
+        password: hashedPassword,
+        emailVerified: new Date(), // Auto-verify email for direct registration
         role: 'TENANT_ADMIN',
         tenantId: tenant.id,
       },

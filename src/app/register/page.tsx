@@ -73,12 +73,36 @@ export default function RegisterPage() {
 
       toast({
         title: 'Success',
-        description: 'Account created successfully! Redirecting to login...',
+        description: 'Account created successfully! Logging you in...',
       })
 
-      setTimeout(() => {
-        router.push('/login')
-      }, 2000)
+      // Auto-login after successful registration
+      const loginResult = await signIn('credentials', {
+        email: formData.email,
+        password: formData.password,
+        redirect: false,
+      })
+
+      if (loginResult?.error) {
+        // Registration succeeded but login failed - still redirect to login
+        toast({
+          title: 'Please login',
+          description: 'Your account was created. Please login with your credentials.',
+        })
+        setTimeout(() => {
+          router.push('/login')
+        }, 2000)
+      } else if (loginResult?.ok) {
+        // Auto-login successful - redirect to dashboard
+        toast({
+          title: 'Welcome!',
+          description: 'Your account is ready. Redirecting to dashboard...',
+        })
+        setTimeout(() => {
+          router.push('/dashboard')
+          router.refresh()
+        }, 1500)
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
