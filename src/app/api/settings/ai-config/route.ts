@@ -18,6 +18,14 @@ export async function GET(req: NextRequest) {
       )
     }
 
+    // ✅ SUPER_ADMIN should NOT access tenant settings directly
+    if (session.user.role === 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Super Admin should use Super Admin dashboard to manage tenants' },
+        { status: 403 }
+      )
+    }
+
     // ✅ Check if user has tenantId (required for non-SUPER_ADMIN)
     if (!session.user.tenantId) {
       return NextResponse.json(
@@ -56,6 +64,14 @@ export async function PUT(req: NextRequest) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
+      )
+    }
+
+    // ✅ SUPER_ADMIN should NOT access tenant settings directly
+    if (session.user.role === 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Super Admin should use Super Admin dashboard to manage tenants' },
+        { status: 403 }
       )
     }
 

@@ -22,19 +22,27 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check permissions - only admins can scrape
-    if (session.user.role !== 'TENANT_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    // ✅ SUPER_ADMIN should NOT access tenant brand scraping directly
+    if (session.user.role === 'SUPER_ADMIN') {
       return NextResponse.json(
-        { error: 'Only admins can configure brand training' },
+        { error: 'Super Admin should use Super Admin dashboard to manage tenants' },
         { status: 403 }
       )
     }
 
-    // Super admins need to have a tenantId to scrape
+    // Check permissions - only tenant admins can scrape
+    if (session.user.role !== 'TENANT_ADMIN') {
+      return NextResponse.json(
+        { error: 'Only tenant admins can configure brand training' },
+        { status: 403 }
+      )
+    }
+
+    // Ensure user has tenantId
     if (!session.user.tenantId) {
       return NextResponse.json(
-        { error: 'Super admin must be associated with a tenant to use brand scraping' },
-        { status: 400 }
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
       )
     }
 

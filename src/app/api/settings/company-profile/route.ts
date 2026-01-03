@@ -13,6 +13,22 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    // ✅ SUPER_ADMIN should NOT access tenant settings directly
+    if (session.user.role === 'SUPER_ADMIN') {
+      return NextResponse.json(
+        { error: 'Super Admin should use Super Admin dashboard to manage tenants' },
+        { status: 403 }
+      )
+    }
+
+    // ✅ Ensure user has tenantId
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
+        { status: 403 }
+      )
+    }
+
     const tenant = await prisma.tenant.findUnique({
       where: { id: session.user.tenantId },
       select: {
@@ -49,10 +65,26 @@ export async function PATCH(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    // Check permissions - only admins can update
-    if (session.user.role !== 'TENANT_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    // ✅ SUPER_ADMIN should NOT access tenant settings directly
+    if (session.user.role === 'SUPER_ADMIN') {
       return NextResponse.json(
-        { error: 'Only admins can update company profile' },
+        { error: 'Super Admin should use Super Admin dashboard to manage tenants' },
+        { status: 403 }
+      )
+    }
+
+    // Check permissions - only admins can update
+    if (session.user.role !== 'TENANT_ADMIN') {
+      return NextResponse.json(
+        { error: 'Only tenant admins can update company profile' },
+        { status: 403 }
+      )
+    }
+
+    // ✅ Ensure user has tenantId
+    if (!session.user.tenantId) {
+      return NextResponse.json(
+        { error: 'User not associated with a tenant' },
         { status: 403 }
       )
     }
