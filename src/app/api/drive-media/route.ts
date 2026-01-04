@@ -64,10 +64,28 @@ export async function GET(req: NextRequest) {
       }))
     })
 
+    // Map database fields to UI interface
+    const mappedMedia = media.map(item => ({
+      id: item.id,
+      fileName: item.originalFileName,
+      mediaUrl: item.localUrl || item.originalFileUrl,
+      mediaType: item.mediaType.toUpperCase() as 'IMAGE' | 'VIDEO',
+      fileSize: item.fileSize || 0,
+      status: item.processingStatus,
+      aiAnalysisResult: item.aiAnalysisResult,
+      aiDescription: item.aiDescription,
+      aiSuggestedTopics: item.aiSuggestedTopics,
+      isGrouped: item.isGrouped,
+      postGenerated: item.postGenerated,
+      postId: item.postId,
+      createdAt: item.syncedAt.toISOString(),
+      updatedAt: item.lastProcessedAt?.toISOString() || item.syncedAt.toISOString(),
+    }))
+
     return NextResponse.json({
       success: true,
-      media,
-      count: media.length,
+      media: mappedMedia,
+      count: mappedMedia.length,
     })
   } catch (error: any) {
     console.error('Error fetching synced media:', error)

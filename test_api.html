@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Drive Media API</title>
+    <style>
+        body {
+            font-family: monospace;
+            padding: 20px;
+            background: #1a1a1a;
+            color: #fff;
+        }
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        button {
+            background: #0070f3;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            font-size: 16px;
+            cursor: pointer;
+            border-radius: 5px;
+            margin: 10px 5px;
+        }
+        button:hover {
+            background: #0051cc;
+        }
+        pre {
+            background: #2a2a2a;
+            padding: 15px;
+            border-radius: 5px;
+            overflow-x: auto;
+        }
+        .success {
+            color: #0f0;
+        }
+        .error {
+            color: #f00;
+        }
+        .info {
+            color: #0ff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🧪 Test Drive Media API</h1>
+        
+        <div>
+            <button onclick="testDriveMedia()">📊 Test /api/drive-media</button>
+            <button onclick="testSession()">👤 Test Session</button>
+            <button onclick="testBrandAssets()">🎨 Test Brand Assets</button>
+            <button onclick="clearOutput()">🗑️ Clear</button>
+        </div>
+
+        <div id="output"></div>
+    </div>
+
+    <script>
+        const output = document.getElementById('output');
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            div.className = type;
+            div.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+            output.appendChild(div);
+        }
+
+        function logJson(data) {
+            const pre = document.createElement('pre');
+            pre.textContent = JSON.stringify(data, null, 2);
+            output.appendChild(pre);
+        }
+
+        function clearOutput() {
+            output.innerHTML = '';
+        }
+
+        async function testDriveMedia() {
+            log('🔍 Testing /api/drive-media...', 'info');
+            try {
+                const response = await fetch('/api/drive-media', {
+                    credentials: 'include'
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                logJson(data);
+                
+                if (data.media && Array.isArray(data.media)) {
+                    log(`✅ Found ${data.media.length} media items`, 'success');
+                } else {
+                    log('⚠️  No media array in response', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testSession() {
+            log('🔍 Testing /api/test-session...', 'info');
+            try {
+                const response = await fetch('/api/test-session', {
+                    credentials: 'include'
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                logJson(data);
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        async function testBrandAssets() {
+            log('🔍 Testing /api/brand/assets...', 'info');
+            try {
+                const response = await fetch('/api/brand/assets', {
+                    credentials: 'include'
+                });
+                
+                log(`Status: ${response.status} ${response.statusText}`, 
+                    response.ok ? 'success' : 'error');
+                
+                const data = await response.json();
+                logJson(data);
+                
+                if (data.assets && Array.isArray(data.assets)) {
+                    log(`✅ Found ${data.assets.length} assets`, 'success');
+                } else {
+                    log('⚠️  No assets array in response', 'error');
+                }
+            } catch (error) {
+                log(`❌ Error: ${error.message}`, 'error');
+                console.error(error);
+            }
+        }
+
+        // Auto-test on load
+        window.addEventListener('load', () => {
+            log('📱 API Test Page loaded', 'success');
+            log('ℹ️  Make sure you are logged in first!', 'info');
+        });
+    </script>
+</body>
+</html>
