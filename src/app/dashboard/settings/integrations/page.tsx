@@ -8,7 +8,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
 import { Input } from '@/components/ui/input'
-import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud, Settings, FolderOpen } from 'lucide-react'
+import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud, Settings, FolderOpen, RefreshCw } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 import { DriveFolderPicker } from '@/components/drive/FolderPicker'
@@ -62,6 +62,8 @@ export default function IntegrationsPage() {
   const [isEditingFolder, setIsEditingFolder] = useState(false)
   const [folderPath, setFolderPath] = useState('/')
   const [isSavingFolder, setIsSavingFolder] = useState(false)
+  const [isSyncing, setIsSyncing] = useState(false)
+  const [syncProgress, setSyncProgress] = useState<string | null>(null)
 
   useEffect(() => {
     let mounted = true
@@ -308,6 +310,41 @@ export default function IntegrationsPage() {
       })
     } finally {
       setIsSavingFolder(false)
+    }
+  }
+
+  const handleManualSync = async () => {
+    setIsSyncing(true)
+    setSyncProgress('Starting sync...')
+
+    try {
+      const response = await fetch('/api/integrations/google-drive/sync-now', {
+        method: 'POST',
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        throw new Error(data.error || 'Sync failed')
+      }
+
+      toast({
+        title: 'Sync Complete!',
+        description: data.message || `Synced ${data.synced} file(s)`,
+      })
+
+      setSyncProgress(null)
+      fetchDriveIntegration()
+    } catch (error: any) {
+      console.error('Manual sync failed:', error)
+      toast({
+        title: 'Sync Failed',
+        description: error.message || 'Failed to sync files from Drive',
+        variant: 'destructive',
+      })
+      setSyncProgress(null)
+    } finally {
+      setIsSyncing(false)
     }
   }
 
@@ -570,41 +607,29 @@ export default function IntegrationsPage() {
                 ) : (
                   // Connected state
                   <div className="space-y-4">
-                    <div className="p-4 border rounded-lg bg-gray-50">
+                    {/* Connection Card */}
+                    <div className="p-4 border rounded-lg bg-gradient-to-r from-green-50 to-blue-50">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-4">
-                          <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center">
+                          <div className="w-14 h-14 bg-green-600 rounded-full flex items-center justify-center shadow-lg">
                             <HardDrive className="h-7 w-7 text-white" />
                           </div>
                           <div>
                             <div className="flex items-center gap-2">
-                              <p className="font-semibold">
+                              <p className="font-semibold text-lg">
                                 {driveIntegration.email || 'Google Drive'}
                               </p>
-                              <Badge className="bg-green-500">Active</Badge>
+                              <Badge className="bg-green-500">Connected</Badge>
                             </div>
-                            <p className="text-sm text-gray-500 mt-1">
-                              Sync Folder: <span className="font-medium">{driveIntegration.syncFolderPath || '/'}</span>
-                              <Button
-                                variant="ghost"
-                                size="sm"
-                                className="ml-2 h-6 px-2"
-                                onClick={() => setIsEditingFolder(!isEditingFolder)}
-                              >
-                                <Settings className="h-3 w-3" />
-                              </Button>
-                            </p>
-                            <p className="text-sm text-gray-500">
-                              Connected: {formatDate(driveIntegration.createdAt)}
-                            </p>
-                            {driveIntegration.lastSyncAt && (
-                              <p className="text-xs text-gray-400">
-                                Last sync: {formatDate(driveIntegration.lastSyncAt, 'MMM dd, yyyy HH:mm')}
+                            <div className="flex items-center gap-2 mt-2">
+                              <FolderOpen className="h-4 w-4 text-blue-600" />
+                              <p className="text-sm text-gray-700">
+                                Folder: <span className="font-medium text-blue-700">{driveIntegration.syncFolderPath || '/'}</span>
                               </p>
-                            )}
-                            {driveIntegration.syncedFilesCount !== undefined && (
-                              <p className="text-xs text-gray-400">
-                                Files synced: {driveIntegration.syncedFilesCount}
+                            </div>
+                            {driveIntegration.lastSyncAt && (
+                              <p className="text-xs text-gray-500 mt-1">
+                                Last sync: {formatDate(driveIntegration.lastSyncAt, 'MMM dd, yyyy HH:mm')}
                               </p>
                             )}
                           </div>
@@ -623,6 +648,47 @@ export default function IntegrationsPage() {
                           )}
                         </Button>
                       </div>
+                    </div>
+
+                    {/* Action Buttons - MUCH MORE VISIBLE */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <Button
+                        variant="outline"
+                        className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-blue-300 hover:border-blue-500 hover:bg-blue-50"
+                        onClick={() => setIsEditingFolder(!isEditingFolder)}
+                        disabled={isSyncing}
+                      >
+                        <Settings className="h-6 w-6 text-blue-600" />
+                        <div className="text-center">
+                          <p className="font-semibold text-sm">Change Folder</p>
+                          <p className="text-xs text-gray-600">Select which Drive folder to sync</p>
+                        </div>
+                      </Button>
+
+                      <Button
+                        variant="outline"
+                        className="h-auto py-4 flex flex-col items-center gap-2 border-2 border-green-300 hover:border-green-500 hover:bg-green-50"
+                        onClick={handleManualSync}
+                        disabled={isSyncing}
+                      >
+                        {isSyncing ? (
+                          <>
+                            <Loader2 className="h-6 w-6 text-green-600 animate-spin" />
+                            <div className="text-center">
+                              <p className="font-semibold text-sm">Syncing...</p>
+                              <p className="text-xs text-gray-600">{syncProgress || 'Please wait'}</p>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            <RefreshCw className="h-6 w-6 text-green-600" />
+                            <div className="text-center">
+                              <p className="font-semibold text-sm">Sync Now</p>
+                              <p className="text-xs text-gray-600">Get latest files from Drive</p>
+                            </div>
+                          </>
+                        )}
+                      </Button>
                     </div>
 
                     {/* Folder Configuration */}
