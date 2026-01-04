@@ -1,8 +1,6 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
-import { getServerSession } from 'next-auth'
-import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
 import { getCurrentUser } from '@/lib/auth/session-helpers'
 
@@ -10,13 +8,12 @@ import { getCurrentUser } from '@/lib/auth/session-helpers'
 
 export async function GET(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await getCurrentUser()
-    if (!user || !user.tenantId) {
+    if (!user.tenantId) {
       return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
     }
 
@@ -43,13 +40,12 @@ export async function GET(request: NextRequest) {
 // POST /api/brand/assets - Create new brand asset
 export async function POST(request: NextRequest) {
   try {
-    const session = await getServerSession(authOptions)
-    if (!session?.user) {
+    const user = await getCurrentUser()
+    if (!user) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const user = await getCurrentUser()
-    if (!user || !user.tenantId) {
+    if (!user.tenantId) {
       return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
     }
 
@@ -100,7 +96,7 @@ export async function POST(request: NextRequest) {
     // If this is a logo type, update tenant logo
     if (type === 'logo' || type === 'LOGO') {
       await prisma.tenant.update({
-        where: { id: session.user.tenantId },
+        where: { id: user.tenantId },
         data: { logo: fileUrl },
       })
     }

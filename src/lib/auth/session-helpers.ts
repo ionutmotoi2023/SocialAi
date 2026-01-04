@@ -4,22 +4,16 @@ import prisma from '@/lib/prisma'
 
 /**
  * Get the current user with tenant information from the session
- * Handles both email and id based authentication
  */
 export async function getCurrentUser() {
   const session = await getServerSession(authOptions)
   
-  if (!session?.user) {
+  if (!session?.user?.id) {
     return null
   }
 
-  // Handle both id and email from session
-  const userId = (session.user as any).id || (session.user as any).email
-  
-  const user = await prisma.user.findFirst({
-    where: userId.includes('@') 
-      ? { email: userId }
-      : { id: userId },
+  const user = await prisma.user.findUnique({
+    where: { id: session.user.id },
     include: { tenant: true },
   })
 
