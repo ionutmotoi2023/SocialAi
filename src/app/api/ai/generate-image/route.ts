@@ -54,6 +54,17 @@ export async function POST(request: NextRequest) {
           },
         })
 
+        // Get AI config to fetch image provider preference
+        const aiConfig = await prisma.aIConfig.findUnique({
+          where: { tenantId: session.user.tenantId },
+          select: {
+            imageProvider: true,
+          },
+        })
+
+        const imageProvider = aiConfig?.imageProvider || 'dalle3'
+        console.log(`🎨 Using image provider from config: ${imageProvider}`)
+
         // Build context for image generation
         const brandContextString = brandData.length > 0
           ? brandData.map(d => `[${d.category}]: ${d.content.substring(0, 300)}`).join('\n')
@@ -68,6 +79,7 @@ export async function POST(request: NextRequest) {
         result = await generateAndProcessImage(postContent, session.user.tenantId, {
           platform,
           style,
+          provider: imageProvider, // ✅ Pass provider from config
           brandContext: brandContextString,
           tenantInfo: tenantInfoData,
         })

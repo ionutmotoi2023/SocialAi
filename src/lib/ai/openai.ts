@@ -475,13 +475,15 @@ export async function generateImage(
 
 /**
  * Generate image based on social media post content with enhanced context
+ * Supports multiple AI providers (DALL-E 3, FLUX.1 Pro, FLUX Schnell, etc.)
  */
 export async function generateImageForPost(
   postContent: string,
   options: {
-    tenantId?: string // ✅ NEW: Tenant ID to fetch custom styles
+    tenantId?: string // ✅ NEW: Tenant ID to fetch custom styles + provider preference
     platform?: 'linkedin' | 'twitter' | 'facebook'
     style?: string // ✅ CHANGED: Accept any custom style ID
+    provider?: string // ✅ NEW: Image provider ('dalle3', 'flux-pro', 'flux-schnell')
     brandContext?: string
     rssInspiration?: {
       title: string
@@ -498,12 +500,13 @@ export async function generateImageForPost(
     tenantId,
     platform = 'linkedin', 
     style = 'professional',
+    provider = 'dalle3', // Default to DALL-E 3
     brandContext,
     rssInspiration,
     tenantInfo
   } = options
 
-  // Build optimized DALL-E prompt with full context
+  // Build optimized image prompt with full context (works for all providers)
   let imagePrompt = ''
 
   // Get custom style prompt from tenant configuration
@@ -581,16 +584,45 @@ export async function generateImageForPost(
 
   // Determine optimal size for platform
   let size: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024'
+  let aspectRatio: '1:1' | '16:9' | '9:16' = '1:1'
   if (platform === 'linkedin' || platform === 'facebook') {
     size = '1024x1024' // Square for LinkedIn/Facebook
+    aspectRatio = '1:1'
   }
 
-  return generateImage({
-    prompt: imagePrompt,
-    size,
-    quality: (style === 'lifestyle' || style === 'luxury' || style === 'bold') ? 'hd' : 'standard', // ✅ HD quality for lifestyle/luxury/bold styles
-    style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
-  })
+  console.log(`🎨 Using image provider: ${provider}`)
+
+  // Use provider factory to get the appropriate provider
+  try {
+    const { getImageProvider } = await import('@/lib/ai/providers/factory')
+    const imageProvider = await getImageProvider(provider as any, true) // Enable fallback
+
+    const result = await imageProvider.generate({
+      prompt: imagePrompt,
+      size,
+      aspectRatio,
+      quality: (style === 'lifestyle' || style === 'luxury' || style === 'bold') ? 'hd' : 'standard',
+      style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
+    })
+
+    // Convert provider result to our GeneratedImage format
+    return {
+      url: result.url,
+      revisedPrompt: result.revisedPrompt || imagePrompt,
+      size: `${result.width}x${result.height}`,
+      quality: (style === 'lifestyle' || style === 'luxury' || style === 'bold') ? 'hd' : 'standard',
+    }
+  } catch (error: any) {
+    console.error(`❌ Image generation failed with provider '${provider}':`, error)
+    // Fallback to DALL-E 3 if provider fails
+    console.log('🔄 Falling back to DALL-E 3...')
+    return generateImage({
+      prompt: imagePrompt,
+      size,
+      quality: (style === 'lifestyle' || style === 'luxury' || style === 'bold') ? 'hd' : 'standard',
+      style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
+    })
+  }
 }
 
 /**

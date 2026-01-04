@@ -34,6 +34,7 @@ export default function SettingsPage() {
     includeEmojis: true,
     includeCTA: true,
     additionalInstructions: '',
+    imageProvider: 'dalle3', // ✅ NEW: Image provider selection
   })
 
   useEffect(() => {
@@ -288,6 +289,29 @@ export default function SettingsPage() {
                         <option value="gpt-4">GPT-4</option>
                         <option value="gpt-3.5-turbo">GPT-3.5 Turbo (Faster)</option>
                       </select>
+                    </div>
+
+                    {/* ✅ NEW: Image Provider Selection */}
+                    <div>
+                      <label className="text-sm font-medium text-gray-700 mb-2 block">
+                        Image Generation Provider
+                      </label>
+                      <select
+                        className="w-full p-2 border rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500"
+                        value={config.imageProvider}
+                        onChange={(e) => setConfig({ ...config, imageProvider: e.target.value })}
+                      >
+                        <option value="flux-pro">FLUX.1 Pro - Best Quality & Speed (Recommended) - $0.025/image</option>
+                        <option value="flux-schnell">FLUX.1 Schnell - Ultra Fast & Cheapest - $0.003/image</option>
+                        <option value="dalle3">DALL-E 3 (OpenAI) - Good Quality - $0.040-0.080/image</option>
+                      </select>
+                      <p className="text-xs text-gray-500 mt-2">
+                        <strong>FLUX.1 Pro:</strong> 3x faster, 3x cheaper, more flexible (accepts "attractive", "glamorous")
+                        <br />
+                        <strong>FLUX Schnell:</strong> 10x cheaper, ultra-fast, good for bulk generation
+                        <br />
+                        <strong>DALL-E 3:</strong> OpenAI's model, stricter content policy
+                      </p>
                     </div>
 
                     <div>

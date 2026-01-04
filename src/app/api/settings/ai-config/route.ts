@@ -93,6 +93,7 @@ export async function PUT(req: NextRequest) {
       includeEmojis,
       includeCTA,
       additionalInstructions,
+      imageProvider, // ✅ NEW: Image provider selection
     } = body
 
     const config = await prisma.aIConfig.upsert({
@@ -106,6 +107,7 @@ export async function PUT(req: NextRequest) {
         includeEmojis,
         includeCTA,
         additionalInstructions,
+        imageProvider, // ✅ NEW: Save image provider
       },
       create: {
         tenantId: session.user.tenantId,
@@ -117,6 +119,7 @@ export async function PUT(req: NextRequest) {
         includeEmojis: includeEmojis ?? true,
         includeCTA: includeCTA ?? true,
         additionalInstructions,
+        imageProvider: imageProvider || 'dalle3', // ✅ NEW: Default to DALL-E 3
       },
     })
 

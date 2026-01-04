@@ -22,6 +22,7 @@ export async function generateAndProcessImage(
   options: {
     platform?: 'linkedin' | 'twitter' | 'facebook'
     style?: string // ✅ CHANGED: Accept any custom style ID
+    provider?: string // ✅ NEW: Image provider selection
     brandContext?: string
     rssInspiration?: {
       title: string
@@ -35,15 +36,16 @@ export async function generateAndProcessImage(
   } = {}
 ): Promise<ImageGenerationResult> {
   try {
-    console.log('🎨 Starting DALL-E 3 image generation workflow with enhanced context...')
+    console.log('🎨 Starting AI image generation workflow with enhanced context...')
 
-    // Step 1: Generate image with DALL-E 3 (with full context + tenantId for custom styles)
-    console.log('Step 1: Generating image with DALL-E 3...')
+    // Step 1: Generate image with selected AI provider (DALL-E 3, FLUX, etc.)
+    console.log('Step 1: Generating image with AI provider...')
     const dalleResult = await generateImageForPost(postContent, {
       tenantId, // ✅ Pass tenantId for custom styles
+      provider: options.provider, // ✅ Pass provider selection
       ...options,
     })
-    console.log('✅ DALL-E 3 generated image:', dalleResult.url)
+    console.log('✅ AI generated image:', dalleResult.url)
 
     // Step 2: Download the generated image
     console.log('Step 2: Downloading generated image...')
