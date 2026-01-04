@@ -479,8 +479,9 @@ export async function generateImage(
 export async function generateImageForPost(
   postContent: string,
   options: {
+    tenantId?: string // ✅ NEW: Tenant ID to fetch custom styles
     platform?: 'linkedin' | 'twitter' | 'facebook'
-    style?: 'professional' | 'creative' | 'minimalist' | 'bold'
+    style?: string // ✅ CHANGED: Accept any custom style ID
     brandContext?: string
     rssInspiration?: {
       title: string
@@ -494,6 +495,7 @@ export async function generateImageForPost(
   } = {}
 ): Promise<GeneratedImage> {
   const { 
+    tenantId,
     platform = 'linkedin', 
     style = 'professional',
     brandContext,
@@ -504,12 +506,23 @@ export async function generateImageForPost(
   // Build optimized DALL-E prompt with full context
   let imagePrompt = ''
 
-  // Style guidelines
-  const styleGuides = {
-    professional: 'Clean, professional, business-appropriate visual. High quality, corporate aesthetic.',
-    creative: 'Creative, artistic, eye-catching design. Bold colors and unique composition.',
-    minimalist: 'Minimalist, simple, elegant design. Clean lines, subtle colors, modern aesthetic.',
-    bold: 'Bold, vibrant, attention-grabbing visual. Strong colors, dynamic composition.',
+  // Get custom style prompt from tenant configuration
+  let stylePrompt: string
+  if (tenantId) {
+    // Dynamic import to avoid circular dependency
+    const { getStylePrompt } = await import('@/lib/image/styles')
+    stylePrompt = await getStylePrompt(tenantId, style)
+    console.log(`🎨 Using tenant style "${style}":`, stylePrompt.substring(0, 100) + '...')
+  } else {
+    // Fallback to built-in style guides
+    const styleGuides: { [key: string]: string } = {
+      professional: 'Clean, professional, business-appropriate visual. High quality, corporate aesthetic.',
+      creative: 'Creative, artistic, eye-catching design. Bold colors and unique composition.',
+      minimalist: 'Minimalist, simple, elegant design. Clean lines, subtle colors, modern aesthetic.',
+      bold: 'Bold, vibrant, attention-grabbing visual. Strong colors, dynamic composition.',
+      lifestyle: 'Lifestyle photography, attractive people in real-life scenarios, modern aesthetic, vibrant colors.',
+    }
+    stylePrompt = styleGuides[style] || styleGuides['professional']
   }
 
   // Platform guidelines
@@ -558,8 +571,8 @@ export async function generateImageForPost(
     imagePrompt += `${aiVisualDescription}. `
   }
 
-  // 5. Add Style & Platform Guidelines
-  imagePrompt += `${styleGuides[style]} ${platformGuides[platform]} `
+  // 5. Add Custom Style Prompt & Platform Guidelines
+  imagePrompt += `${stylePrompt} ${platformGuides[platform]} `
   
   // 6. Final instructions
   imagePrompt += 'No text or words in the image. Photo-realistic quality.'

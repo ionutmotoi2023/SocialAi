@@ -21,7 +21,7 @@ export async function generateAndProcessImage(
   tenantId: string,
   options: {
     platform?: 'linkedin' | 'twitter' | 'facebook'
-    style?: 'professional' | 'creative' | 'minimalist' | 'bold'
+    style?: string // ✅ CHANGED: Accept any custom style ID
     brandContext?: string
     rssInspiration?: {
       title: string
@@ -37,9 +37,12 @@ export async function generateAndProcessImage(
   try {
     console.log('🎨 Starting DALL-E 3 image generation workflow with enhanced context...')
 
-    // Step 1: Generate image with DALL-E 3 (with full context)
+    // Step 1: Generate image with DALL-E 3 (with full context + tenantId for custom styles)
     console.log('Step 1: Generating image with DALL-E 3...')
-    const dalleResult = await generateImageForPost(postContent, options)
+    const dalleResult = await generateImageForPost(postContent, {
+      tenantId, // ✅ Pass tenantId for custom styles
+      ...options,
+    })
     console.log('✅ DALL-E 3 generated image:', dalleResult.url)
 
     // Step 2: Download the generated image

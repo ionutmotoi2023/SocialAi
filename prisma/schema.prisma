@@ -95,6 +95,10 @@ model AIConfig {
   // Additional AI Instructions - Custom context for AI to consider
   additionalInstructions String? @db.Text // Free-form text for custom AI instructions
 
+  // Custom Image Styles - Tenant-specific image generation styles
+  imageStyles Json? // { styles: [{ id, name, prompt, isDefault, isActive }] }
+  defaultImageStyle String @default("professional") // Default style to use
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

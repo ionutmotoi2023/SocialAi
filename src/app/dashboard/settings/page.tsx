@@ -15,8 +15,9 @@ import { ContentSourcesTab } from '@/components/settings/content-sources-tab'
 import { BrandAssetsTab } from '@/components/settings/brand-assets-tab'
 import BrandVariablesTab from '@/components/settings/brand-variables-tab'
 import CompanyProfileTab from '@/components/settings/company-profile-tab'
+import { ImageStylesManager } from '@/components/settings/ImageStylesManager'
 
-type TabType = 'profile' | 'ai' | 'variables' | 'brand' | 'content' | 'assets'
+type TabType = 'profile' | 'ai' | 'variables' | 'brand' | 'content' | 'assets' | 'image-styles'
 
 export default function SettingsPage() {
   const { data: session } = useSession()
@@ -126,6 +127,17 @@ export default function SettingsPage() {
                 AI Settings
               </button>
               <button
+                onClick={() => setActiveTab('image-styles')}
+                className={`py-4 px-4 font-medium text-sm border-b-2 transition-colors ${
+                  activeTab === 'image-styles'
+                    ? 'border-blue-500 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700'
+                }`}
+              >
+                <Sparkles className="h-4 w-4 inline mr-2" />
+                Image Styles
+              </button>
+              <button
                 onClick={() => setActiveTab('variables')}
                 className={`py-4 px-4 font-medium text-sm border-b-2 transition-colors ${
                   activeTab === 'variables'
@@ -180,6 +192,7 @@ export default function SettingsPage() {
               <h1 className="text-2xl font-bold text-gray-900">
                 {activeTab === 'profile' && 'Company Profile'}
                 {activeTab === 'ai' && 'AI Settings'}
+                {activeTab === 'image-styles' && 'Image Generation Styles'}
                 {activeTab === 'variables' && 'Brand Variables'}
                 {activeTab === 'brand' && 'Brand Training'}
                 {activeTab === 'content' && 'Content Sources'}
@@ -188,6 +201,7 @@ export default function SettingsPage() {
               <p className="text-sm text-gray-600">
                 {activeTab === 'profile' && 'Manage your company information and profile'}
                 {activeTab === 'ai' && 'Configure your AI and platform preferences'}
+                {activeTab === 'image-styles' && 'Customize how AI generates images for your posts'}
                 {activeTab === 'variables' && 'Define specific brand details for AI-generated content'}
                 {activeTab === 'brand' && 'Train AI on your brand voice and values'}
                 {activeTab === 'content' && 'Manage RSS feeds and content sources'}
@@ -372,6 +386,7 @@ export default function SettingsPage() {
                 </Card>
               </div>
             )}
+            {activeTab === 'image-styles' && <ImageStylesManager />}
             {activeTab === 'brand' && <BrandTrainingTab />}
             {activeTab === 'content' && <ContentSourcesTab />}
           </div>
