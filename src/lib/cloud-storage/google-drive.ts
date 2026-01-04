@@ -225,3 +225,54 @@ export interface DriveFile {
   thumbnailLink?: string
   parents?: string[]
 }
+
+export interface DriveFolder {
+  id: string
+  name: string
+  path: string
+  hasChildren: boolean
+}
+
+/**
+ * List folders in a specific folder (for folder picker)
+ */
+export async function listFolders(
+  accessToken: string,
+  parentFolderId: string = 'root'
+): Promise<DriveFolder[]> {
+  const oauth2Client = getOAuth2Client()
+  oauth2Client.setCredentials({ access_token: accessToken })
+
+  const drive = google.drive({ version: 'v3', auth: oauth2Client })
+
+  // Query for folders only
+  const query = `'${parentFolderId}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+
+  const response = await drive.files.list({
+    q: query,
+    pageSize: 100,
+    fields: 'files(id, name)',
+    orderBy: 'name',
+  })
+
+  const folders: DriveFolder[] = []
+
+  for (const folder of response.data.files || []) {
+    // Check if folder has children (subfolders)
+    const childQuery = `'${folder.id}' in parents and mimeType='application/vnd.google-apps.folder' and trashed=false`
+    const childResponse = await drive.files.list({
+      q: childQuery,
+      pageSize: 1,
+      fields: 'files(id)',
+    })
+
+    folders.push({
+      id: folder.id!,
+      name: folder.name!,
+      path: '', // Will be computed on frontend
+      hasChildren: (childResponse.data.files?.length || 0) > 0,
+    })
+  }
+
+  return folders
+}

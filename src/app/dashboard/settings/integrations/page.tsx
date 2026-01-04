@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input'
 import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud, Settings, FolderOpen } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
+import { DriveFolderPicker } from '@/components/drive/FolderPicker'
 
 // Safe date formatter to prevent React hydration errors
 const formatDate = (dateString: string | undefined, formatStr: string = 'MMM dd, yyyy') => {
@@ -275,14 +276,16 @@ export default function IntegrationsPage() {
     }
   }
 
-  const handleSaveFolderPath = async () => {
+  const handleSaveFolderPath = async (path?: string, folderId?: string) => {
     setIsSavingFolder(true)
 
     try {
+      const pathToSave = path || folderPath
+
       const response = await fetch('/api/integrations/google-drive/status', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ syncFolderPath: folderPath }),
+        body: JSON.stringify({ syncFolderPath: pathToSave }),
       })
 
       if (!response.ok) {
@@ -295,6 +298,7 @@ export default function IntegrationsPage() {
       })
 
       setIsEditingFolder(false)
+      setFolderPath(pathToSave)
       fetchDriveIntegration()
     } catch (error: any) {
       toast({
@@ -623,64 +627,14 @@ export default function IntegrationsPage() {
 
                     {/* Folder Configuration */}
                     {isEditingFolder && (
-                      <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
-                        <div className="flex items-start gap-3">
-                          <FolderOpen className="h-5 w-5 text-blue-600 mt-0.5" />
-                          <div className="flex-1">
-                            <h4 className="font-semibold text-blue-900 mb-2">Configure Sync Folder</h4>
-                            <p className="text-sm text-blue-800 mb-3">
-                              Specify the folder path in your Google Drive to sync media from.
-                            </p>
-                            <div className="space-y-3">
-                              <div>
-                                <label className="text-sm font-medium text-blue-900 mb-1 block">
-                                  Folder Path
-                                </label>
-                                <Input
-                                  type="text"
-                                  value={folderPath}
-                                  onChange={(e) => setFolderPath(e.target.value)}
-                                  placeholder="/"
-                                  className="bg-white"
-                                />
-                                <p className="text-xs text-blue-700 mt-1">
-                                  Examples: <code className="bg-blue-100 px-1 rounded">/</code> (root), 
-                                  <code className="bg-blue-100 px-1 rounded ml-1">/Social Media</code>, 
-                                  <code className="bg-blue-100 px-1 rounded ml-1">/Marketing/Posts</code>
-                                </p>
-                              </div>
-                              <div className="flex gap-2">
-                                <Button
-                                  onClick={handleSaveFolderPath}
-                                  disabled={isSavingFolder}
-                                  size="sm"
-                                  className="bg-blue-600 hover:bg-blue-700"
-                                >
-                                  {isSavingFolder ? (
-                                    <>
-                                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
-                                      Saving...
-                                    </>
-                                  ) : (
-                                    'Save Changes'
-                                  )}
-                                </Button>
-                                <Button
-                                  variant="outline"
-                                  size="sm"
-                                  onClick={() => {
-                                    setIsEditingFolder(false)
-                                    setFolderPath(driveIntegration?.syncFolderPath || '/')
-                                  }}
-                                  disabled={isSavingFolder}
-                                >
-                                  Cancel
-                                </Button>
-                              </div>
-                            </div>
-                          </div>
-                        </div>
-                      </div>
+                      <DriveFolderPicker
+                        currentPath={driveIntegration?.syncFolderPath || '/'}
+                        onSelect={(path, folderId) => handleSaveFolderPath(path, folderId)}
+                        onCancel={() => {
+                          setIsEditingFolder(false)
+                          setFolderPath(driveIntegration?.syncFolderPath || '/')
+                        }}
+                      />
                     )}
 
                     {/* Info */}
