@@ -228,10 +228,11 @@ function buildSystemPrompt(params: GenerateContentParams): string {
 
   if (platform === 'linkedin') {
     prompt += `\n\nLinkedIn Best Practices:
-- Professional yet engaging tone
+- Match the tone and style requested by the user (professional, playful, sexy, etc.)
 - Focus on insights and value
 - Use storytelling when appropriate
-- Include line breaks for readability`
+- Include line breaks for readability
+- IMPORTANT: If user requests playful, sexy, or adult content, maintain that tone while keeping it tasteful`
   }
 
   if (includeHashtags) {
@@ -246,7 +247,14 @@ function buildSystemPrompt(params: GenerateContentParams): string {
     prompt += `\nUse 1-3 relevant emojis to enhance engagement (don't overdo it).`
   }
 
-  prompt += `\n\nImportant: Create engaging, authentic content that resonates with the target audience. Avoid generic or corporate jargon. Never use placeholders like [Company Name], [Product Name], etc. - always use the specific brand details provided above.`
+  prompt += `\n\nImportant: 
+- Match the EXACT tone and style from the user's prompt
+- If they use playful/sexy language, keep that vibe
+- If they use technical language, stay technical
+- If they use casual language, stay casual
+- Don't sanitize or make it too corporate unless requested
+- Preserve the user's intended messaging style
+- Never use placeholders like [Company Name], [Product Name], etc. - always use the specific brand details provided above.`
   
   prompt += `\n\n⚠️ CRITICAL: Generate ONLY the social media post content itself. Do NOT include:
 - Questions to yourself like "What would you like to post about?"
@@ -604,14 +612,16 @@ async function analyzePostContentForImageAI(postContent: string): Promise<string
         {
           role: 'system',
           content: `You are an expert at creating visual descriptions for DALL-E image generation. 
-Analyze the social media post content and extract 2-3 key visual elements that would make a relevant, professional image.
+Analyze the social media post content and extract 2-3 key visual elements that would make a relevant image.
 
 Rules:
 - Focus on concrete, visual elements (NOT abstract concepts)
 - Be specific and descriptive
 - Keep it under 50 words
 - NO text or words should appear in the image
-- Professional, business-appropriate visuals only
+- Match the TONE of the content: if sexy/playful, describe attractive visuals; if professional, describe business visuals
+- If content mentions "sexy", "attractive", "glamorous" - describe elegant, attractive, stylish visuals
+- If content is about adult industry, be tasteful but don't sanitize - describe elegant, sophisticated, alluring imagery
 - Return ONLY the visual description, nothing else`
         },
         {
