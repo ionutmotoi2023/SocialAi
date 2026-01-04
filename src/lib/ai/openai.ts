@@ -275,13 +275,13 @@ function getLengthGuidance(length: string): string {
 function getMaxTokens(length?: string): number {
   switch (length) {
     case 'short':
-      return 200
+      return 300
     case 'medium':
-      return 400
-    case 'long':
       return 600
+    case 'long':
+      return 1000
     default:
-      return 400
+      return 600 // Increased default for fuller content
   }
 }
 

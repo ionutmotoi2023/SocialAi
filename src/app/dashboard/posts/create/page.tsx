@@ -8,11 +8,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon, Home, Eye, Wand2 } from 'lucide-react'
+import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon, Home, Eye, Wand2, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ImageUpload } from '@/components/upload/image-upload'
 import { LinkedInPostPreview } from '@/components/posts/linkedin-post-preview'
 import { Checkbox } from '@/components/ui/checkbox'
+import { ScheduleModal } from '@/components/calendar/schedule-modal'
 
 export default function CreatePostPage() {
   const router = useRouter()
@@ -27,6 +28,8 @@ export default function CreatePostPage() {
   const [optimizedMediaUrls, setOptimizedMediaUrls] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(true) // Show preview by default
   const [autoGenerateImage, setAutoGenerateImage] = useState(true) // Auto-generate images by default
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+  const [savedPostId, setSavedPostId] = useState<string | null>(null)
 
   const handleGenerateImage = async (postContent: string) => {
     if (!autoGenerateImage || mediaUrls.length > 0) {
@@ -52,7 +55,11 @@ export default function CreatePostPage() {
 
       if (!response.ok) {
         console.error('Failed to generate image:', data.error)
-        // Don't show error toast - just skip image generation
+        toast({
+          title: '⚠️ Image Generation Info',
+          description: data.error || 'Could not generate image. You can upload manually or try again.',
+          variant: 'default',
+        })
         return
       }
 
@@ -66,7 +73,10 @@ export default function CreatePostPage() {
       }
     } catch (error: any) {
       console.error('Image generation error:', error)
-      // Silently fail - image generation is optional
+      toast({
+        title: '⚠️ Image Generation Failed',
+        description: 'Could not generate image. You can upload manually or try again later.',
+      })
     } finally {
       setIsGeneratingImage(false)
     }
@@ -152,6 +162,9 @@ export default function CreatePostPage() {
         throw new Error('Failed to save draft')
       }
 
+      const data = await response.json()
+      setSavedPostId(data.id) // Save post ID for scheduling
+
       toast({
         title: 'Success',
         description: 'Draft saved successfully',
@@ -165,6 +178,57 @@ export default function CreatePostPage() {
         variant: 'destructive',
       })
     }
+  }
+
+  const handleScheduleClick = async () => {
+    // First save as draft if not already saved
+    if (!savedPostId) {
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: editedContent,
+            title: generatedContent?.title || prompt.substring(0, 100),
+            status: 'DRAFT',
+            mediaUrls,
+            aiGenerated: true,
+            aiModel: generatedContent?.model,
+            aiConfidence: generatedContent?.confidence,
+            originalPrompt: prompt,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save post')
+        }
+
+        const data = await response.json()
+        setSavedPostId(data.id)
+        
+        // Open schedule modal
+        setIsScheduleModalOpen(true)
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to save post',
+          variant: 'destructive',
+        })
+      }
+    } else {
+      // Post already saved, just open schedule modal
+      setIsScheduleModalOpen(true)
+    }
+  }
+
+  const handleScheduleSuccess = () => {
+    toast({
+      title: 'Success',
+      description: 'Post scheduled successfully',
+    })
+    router.push('/dashboard/posts')
   }
 
   return (
@@ -374,9 +438,10 @@ export default function CreatePostPage() {
                           Save as Draft
                         </Button>
                         <Button 
+                          onClick={handleScheduleClick}
                           className="w-full sm:w-auto sm:ml-auto"
                         >
-                          <Send className="mr-2 h-4 w-4" />
+                          <Calendar className="mr-2 h-4 w-4" />
                           Schedule Post
                         </Button>
                       </div>
@@ -436,9 +501,10 @@ export default function CreatePostPage() {
                         Save as Draft
                       </Button>
                       <Button 
+                        onClick={handleScheduleClick}
                         className="w-full sm:w-auto sm:ml-auto"
                       >
-                        <Send className="mr-2 h-4 w-4" />
+                        <Calendar className="mr-2 h-4 w-4" />
                         Schedule Post
                       </Button>
                     </div>
@@ -489,6 +555,17 @@ export default function CreatePostPage() {
             )}
           </div>
         </main>
+
+        {/* Schedule Modal */}
+        {savedPostId && (
+          <ScheduleModal
+            isOpen={isScheduleModalOpen}
+            onClose={() => setIsScheduleModalOpen(false)}
+            selectedDate={new Date()}
+            onScheduled={handleScheduleSuccess}
+            postId={savedPostId}
+          />
+        )}
     </>
   )
 }
