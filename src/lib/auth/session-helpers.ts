@@ -6,18 +6,29 @@ import prisma from '@/lib/prisma'
  * Get the current user with tenant information from the session
  */
 export async function getCurrentUser() {
-  const session = await getServerSession(authOptions)
-  
-  if (!session?.user?.id) {
+  try {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
+      console.log('⚠️ No session or user ID found')
+      return null
+    }
+
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      include: { tenant: true },
+    })
+
+    if (!user) {
+      console.log('⚠️ User not found in database:', session.user.id)
+      return null
+    }
+
+    return user
+  } catch (error) {
+    console.error('❌ Error in getCurrentUser():', error)
     return null
   }
-
-  const user = await prisma.user.findUnique({
-    where: { id: session.user.id },
-    include: { tenant: true },
-  })
-
-  return user
 }
 
 /**
