@@ -34,7 +34,7 @@ export const BUILTIN_IMAGE_STYLES: ImageStyle[] = [
   {
     id: 'creative',
     name: 'Creative',
-    prompt: 'Creative, artistic, eye-catching design. Bold colors and unique composition. Abstract or conceptual visuals.',
+    prompt: 'Creative artistic photography, photo-realistic with artistic flair, eye-catching unique composition, bold vibrant colors, conceptual visual storytelling, professional photography with creative twist, interesting angles and perspectives, magazine editorial style, dramatic lighting, high detail, modern aesthetic, innovative visual design.',
     description: 'Artistic and unique designs. Great for creative industries and brand storytelling.',
     isDefault: false,
     isActive: true,
@@ -50,7 +50,7 @@ export const BUILTIN_IMAGE_STYLES: ImageStyle[] = [
   {
     id: 'lifestyle',
     name: 'Lifestyle',
-    prompt: 'Lifestyle photography, attractive people in real-life scenarios, modern aesthetic, vibrant colors, aspirational feel. Natural lighting, authentic moments.',
+    prompt: 'Professional lifestyle photography, photo-realistic, DSLR camera quality, attractive confident person in authentic real-life scenario, natural soft lighting, shallow depth of field, 35mm portrait lens, high detail, modern aesthetic, vibrant warm colors, aspirational feel, editorial quality, professional model, fashion photography style, authentic natural expression, studio-quality lighting, realistic skin texture.',
     description: 'Human-focused, aspirational imagery. Perfect for fashion, wellness, and consumer brands.',
     isDefault: false,
     isActive: true,
@@ -58,7 +58,7 @@ export const BUILTIN_IMAGE_STYLES: ImageStyle[] = [
   {
     id: 'bold',
     name: 'Bold',
-    prompt: 'Bold, vibrant, attention-grabbing visual. Strong colors, dynamic composition, energetic feel. High contrast and visual impact.',
+    prompt: 'Bold vibrant photography, photo-realistic DSLR quality, attention-grabbing visual with strong saturated colors, dynamic energetic composition, high contrast lighting, dramatic shadows, wide-angle lens perspective, professional editorial style, confident attractive model or eye-catching subject, fashion-forward aesthetic, visual impact, magazine cover quality.',
     description: 'Eye-catching and energetic. Great for social media, events, and marketing campaigns.',
     isDefault: false,
     isActive: true,
@@ -66,7 +66,7 @@ export const BUILTIN_IMAGE_STYLES: ImageStyle[] = [
   {
     id: 'luxury',
     name: 'Luxury',
-    prompt: 'High-end luxury aesthetic, premium materials, sophisticated composition, refined elegance. Rich colors, professional styling.',
+    prompt: 'High-end luxury photography, photo-realistic DSLR quality, premium materials and sophisticated composition, elegant refined aesthetic, professional model or product styling, rich warm colors, shallow depth of field, editorial fashion photography style, studio lighting setup, 50mm portrait lens, high detail textures, aspirational upscale atmosphere.',
     description: 'Premium and sophisticated. Ideal for luxury brands, real estate, and high-end products.',
     isDefault: false,
     isActive: true,

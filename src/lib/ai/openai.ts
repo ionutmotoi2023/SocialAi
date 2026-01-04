@@ -574,8 +574,8 @@ export async function generateImageForPost(
   // 5. Add Custom Style Prompt & Platform Guidelines
   imagePrompt += `${stylePrompt} ${platformGuides[platform]} `
   
-  // 6. Final instructions
-  imagePrompt += 'No text or words in the image. Photo-realistic quality.'
+  // 6. Final instructions - Enhanced for photo-realism
+  imagePrompt += 'No text or watermarks in the image. Photo-realistic quality, professional DSLR photography, high detail, natural skin texture, realistic lighting, editorial quality, shot with professional camera equipment.'
 
   console.log('🎨 Enhanced DALL-E prompt with AI context:', imagePrompt.substring(0, 250) + '...')
 
@@ -588,7 +588,7 @@ export async function generateImageForPost(
   return generateImage({
     prompt: imagePrompt,
     size,
-    quality: 'standard',
+    quality: (style === 'lifestyle' || style === 'luxury' || style === 'bold') ? 'hd' : 'standard', // ✅ HD quality for lifestyle/luxury/bold styles
     style: style === 'professional' || style === 'minimalist' ? 'natural' : 'vivid',
   })
 }
@@ -620,30 +620,35 @@ async function analyzePostContentForImageAI(postContent: string): Promise<string
     const openai = getOpenAIClient()
     
     const response = await openai.chat.completions.create({
-      model: 'gpt-4o-mini', // Faster and cheaper for this task
+      model: 'gpt-4o', // ✅ UPGRADED: Better quality and less conservative than gpt-4o-mini
       messages: [
         {
           role: 'system',
-          content: `You are an expert at creating visual descriptions for DALL-E image generation. 
-Analyze the social media post content and extract 2-3 key visual elements that would make a relevant image.
+          content: `You are an expert fashion/lifestyle photography director creating detailed visual descriptions for DALL-E 3.
 
-Rules:
-- Focus on concrete, visual elements (NOT abstract concepts)
-- Be specific and descriptive
-- Keep it under 50 words
-- NO text or words should appear in the image
-- Match the TONE of the content: if sexy/playful, describe attractive visuals; if professional, describe business visuals
-- If content mentions "sexy", "attractive", "glamorous" - describe elegant, attractive, stylish visuals
-- If content is about adult industry, be tasteful but don't sanitize - describe elegant, sophisticated, alluring imagery
-- Return ONLY the visual description, nothing else`
+CRITICAL RULES:
+1. **Photo-realistic style**: Always describe as "professional photography", "DSLR quality", "editorial photo"
+2. **Human subjects**: If content mentions people/person/woman/man - ALWAYS include detailed description of attractive, confident, professional model
+3. **Tone matching**:
+   - "sexy/attractive/glamorous" → "elegant fashionable model, professional styling, alluring expression, sophisticated aesthetic"
+   - "professional" → "confident business professional, modern attire, corporate setting"
+   - "lifestyle" → "authentic natural moment, lifestyle photography, relatable scenario"
+4. **Photography details**: Include lighting ("natural soft lighting", "golden hour"), lens ("35mm portrait"), composition ("shallow depth of field")
+5. **NO sanitization**: If user wants attractive/glamorous content, describe it elegantly but directly
+6. **Output**: ONLY the visual description (under 80 words), no explanations
+
+Example input: "O femeie sexy umana care vorbeste la telefon"
+Example output: "Professional fashion photography, attractive confident businesswoman in elegant attire speaking on phone, sophisticated office interior with warm ambient lighting, shallow depth of field, 35mm portrait lens, photo-realistic DSLR quality, natural expression, professional styling, editorial aesthetic"
+
+Now analyze this post content and create the visual description:`
         },
         {
           role: 'user',
           content: `Post content:\n${postContent}\n\nGenerate visual description:`
         }
       ],
-      temperature: 0.7,
-      max_tokens: 150
+      temperature: 0.8,
+      max_tokens: 200
     })
 
     const visualDescription = response.choices[0]?.message?.content?.trim() || ''
