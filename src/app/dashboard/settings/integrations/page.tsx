@@ -11,6 +11,18 @@ import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 
+// Safe date formatter to prevent React hydration errors
+const formatDate = (dateString: string | undefined, formatStr: string = 'MMM dd, yyyy') => {
+  if (!dateString) return 'N/A'
+  try {
+    const date = new Date(dateString)
+    if (isNaN(date.getTime())) return 'Invalid date'
+    return format(date, formatStr)
+  } catch {
+    return 'Invalid date'
+  }
+}
+
 interface LinkedInIntegration {
   id: string
   linkedinId: string
@@ -47,8 +59,27 @@ export default function IntegrationsPage() {
   const [isDriveDisconnecting, setIsDriveDisconnecting] = useState(false)
 
   useEffect(() => {
-    fetchIntegrations()
-    fetchDriveIntegration()
+    let mounted = true
+    
+    const loadData = async () => {
+      try {
+        await fetchIntegrations()
+        if (mounted) {
+          await fetchDriveIntegration()
+        }
+      } catch (error) {
+        console.error('Failed to load integrations:', error)
+        if (mounted) {
+          setIsLoading(false)
+        }
+      }
+    }
+    
+    loadData()
+    
+    return () => {
+      mounted = false
+    }
   }, [])
 
   const fetchIntegrations = async () => {
@@ -58,9 +89,13 @@ export default function IntegrationsPage() {
       if (response.ok) {
         const data = await response.json()
         setIntegrations(data.integrations || [])
+      } else {
+        console.error('Failed to fetch LinkedIn integrations:', response.status)
+        setIntegrations([])
       }
     } catch (error) {
       console.error('Failed to fetch integrations:', error)
+      setIntegrations([])
     } finally {
       setIsLoading(false)
     }
@@ -71,12 +106,18 @@ export default function IntegrationsPage() {
       const response = await fetch('/api/integrations/google-drive/status')
       if (response.ok) {
         const data = await response.json()
-        if (data.connected) {
+        if (data.connected && data.integration) {
           setDriveIntegration(data.integration)
+        } else {
+          setDriveIntegration(null)
         }
+      } else {
+        console.error('Failed to fetch Drive integration:', response.status)
+        setDriveIntegration(null)
       }
     } catch (error) {
       console.error('Failed to fetch Drive integration:', error)
+      setDriveIntegration(null)
     }
   }
 
@@ -358,11 +399,11 @@ export default function IntegrationsPage() {
                                 ID: {integration.linkedinId}
                               </p>
                               <p className="text-sm text-gray-500">
-                                Connected: {format(new Date(integration.createdAt), 'MMM dd, yyyy')}
+                                Connected: {formatDate(integration.createdAt)}
                               </p>
                               {integration.expiresAt && (
                                 <p className="text-xs text-gray-400">
-                                  Expires: {format(new Date(integration.expiresAt), 'MMM dd, yyyy')}
+                                  Expires: {formatDate(integration.expiresAt)}
                                 </p>
                               )}
                             </div>
@@ -505,11 +546,11 @@ export default function IntegrationsPage() {
                               Folder: {driveIntegration.folderPath || '/SocialAI'}
                             </p>
                             <p className="text-sm text-gray-500">
-                              Connected: {format(new Date(driveIntegration.createdAt), 'MMM dd, yyyy')}
+                              Connected: {formatDate(driveIntegration.createdAt)}
                             </p>
                             {driveIntegration.lastSyncAt && (
                               <p className="text-xs text-gray-400">
-                                Last sync: {format(new Date(driveIntegration.lastSyncAt), 'MMM dd, yyyy HH:mm')}
+                                Last sync: {formatDate(driveIntegration.lastSyncAt, 'MMM dd, yyyy HH:mm')}
                               </p>
                             )}
                             {driveIntegration.syncedFilesCount !== undefined && (
