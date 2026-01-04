@@ -13,16 +13,20 @@ export async function GET(req: NextRequest) {
   try {
     const session = await getServerSession(authOptions)
     
-    if (!session?.user?.id) {
+    if (!session?.user) {
       return NextResponse.json(
         { error: 'Unauthorized' },
         { status: 401 }
       )
     }
 
-    // Get user's tenant
-    const user = await prisma.user.findUnique({
-      where: { id: session.user.id },
+    // Get user's tenant - handle both email and id from session
+    const userId = (session.user as any).id || (session.user as any).email
+    
+    const user = await prisma.user.findFirst({
+      where: userId.includes('@') 
+        ? { email: userId }
+        : { id: userId },
       include: { tenant: true },
     })
 
