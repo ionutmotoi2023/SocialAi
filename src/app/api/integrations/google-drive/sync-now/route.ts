@@ -121,7 +121,7 @@ export async function POST(request: NextRequest) {
           where: {
             tenantId: integration.tenantId,
             originalFileName: file.name!,
-            driveFileId: file.id!,
+            originalFileId: file.id!,
           },
         })
 
@@ -146,16 +146,17 @@ export async function POST(request: NextRequest) {
         await prisma.syncedMedia.create({
           data: {
             tenantId: integration.tenantId,
-            driveFileId: file.id!,
+            cloudStorageIntegrationId: integration.id,
+            originalFileId: file.id!,
             originalFileName: file.name!,
-            cloudinaryUrl,
+            originalFileUrl: file.webContentLink || '',
+            originalFolderPath: integration.syncFolderPath,
+            localUrl: cloudinaryUrl,
+            mediaType: file.mimeType!.startsWith('video/') ? 'video' : 'image',
             mimeType: file.mimeType!,
             fileSize: file.size ? parseInt(file.size) : 0,
-            status: 'PENDING',
-            metadata: {
-              createdTime: file.createdTime,
-              modifiedTime: file.modifiedTime,
-            },
+            processingStatus: 'PENDING',
+            uploadedAt: file.createdTime ? new Date(file.createdTime) : undefined,
           },
         })
 
