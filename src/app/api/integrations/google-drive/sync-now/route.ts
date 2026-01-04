@@ -126,6 +126,7 @@ export async function POST(request: NextRequest) {
         })
 
         if (existing) {
+          console.log(`⏭️  Skipped (already exists): ${file.name} [ID: ${existing.id}]`)
           skipped++
           continue
         }
