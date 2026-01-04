@@ -544,10 +544,10 @@ export async function generateImageForPost(
     }
   }
 
-  // 4. Analyze Post Content for Visual Elements
-  const contentThemes = analyzePostContentForImage(postContent)
-  if (contentThemes.length > 0) {
-    imagePrompt += `Visual elements: ${contentThemes.slice(0, 3).join(', ')}. `
+  // 4. USE AI to Analyze Post Content for Visual Elements (NEW!)
+  const aiVisualDescription = await analyzePostContentForImageAI(postContent)
+  if (aiVisualDescription) {
+    imagePrompt += `${aiVisualDescription}. `
   }
 
   // 5. Add Style & Platform Guidelines
@@ -556,7 +556,7 @@ export async function generateImageForPost(
   // 6. Final instructions
   imagePrompt += 'No text or words in the image. Photo-realistic quality.'
 
-  console.log('🎨 Enhanced DALL-E prompt with context:', imagePrompt.substring(0, 200) + '...')
+  console.log('🎨 Enhanced DALL-E prompt with AI context:', imagePrompt.substring(0, 250) + '...')
 
   // Determine optimal size for platform
   let size: '1024x1024' | '1024x1792' | '1792x1024' = '1024x1024'
@@ -592,9 +592,51 @@ function extractKeyThemes(text: string, maxLength: number = 100): string {
 }
 
 /**
- * Analyze post content to extract visual elements for image generation
+ * Analyze post content to extract visual elements for image generation using AI
  */
-function analyzePostContentForImage(postContent: string): string[] {
+async function analyzePostContentForImageAI(postContent: string): Promise<string> {
+  try {
+    const openai = getOpenAIClient()
+    
+    const response = await openai.chat.completions.create({
+      model: 'gpt-4o-mini', // Faster and cheaper for this task
+      messages: [
+        {
+          role: 'system',
+          content: `You are an expert at creating visual descriptions for DALL-E image generation. 
+Analyze the social media post content and extract 2-3 key visual elements that would make a relevant, professional image.
+
+Rules:
+- Focus on concrete, visual elements (NOT abstract concepts)
+- Be specific and descriptive
+- Keep it under 50 words
+- NO text or words should appear in the image
+- Professional, business-appropriate visuals only
+- Return ONLY the visual description, nothing else`
+        },
+        {
+          role: 'user',
+          content: `Post content:\n${postContent}\n\nGenerate visual description:`
+        }
+      ],
+      temperature: 0.7,
+      max_tokens: 150
+    })
+
+    const visualDescription = response.choices[0]?.message?.content?.trim() || ''
+    console.log('🎨 AI-generated visual description:', visualDescription)
+    return visualDescription
+  } catch (error) {
+    console.error('Failed to generate AI visual description:', error)
+    // Fallback to original keyword method
+    return analyzePostContentForImageFallback(postContent).join(', ')
+  }
+}
+
+/**
+ * Fallback: Analyze post content using keywords (original method)
+ */
+function analyzePostContentForImageFallback(postContent: string): string[] {
   const contentLower = postContent.toLowerCase()
   const visualElements: string[] = []
 
