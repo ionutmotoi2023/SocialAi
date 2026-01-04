@@ -1,6 +1,6 @@
 {
   "name": "social-media-ai-saas",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "private": true,
   "description": "SaaS platform for AI-powered social media automation with multi-tenant architecture",
   "author": "AI MINDLOOP SRL",
