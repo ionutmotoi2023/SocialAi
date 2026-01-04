@@ -8,15 +8,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Badge } from '@/components/ui/badge'
-import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon, Home, Eye } from 'lucide-react'
+import { Bot, Loader2, Sparkles, RefreshCw, Save, Send, Image as ImageIcon, Home, Eye, Wand2, Calendar } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { ImageUpload } from '@/components/upload/image-upload'
 import { LinkedInPostPreview } from '@/components/posts/linkedin-post-preview'
+import { Checkbox } from '@/components/ui/checkbox'
+import { ScheduleModal } from '@/components/calendar/schedule-modal'
 
 export default function CreatePostPage() {
   const router = useRouter()
   const { toast } = useToast()
   const [isGenerating, setIsGenerating] = useState(false)
+  const [isGeneratingImage, setIsGeneratingImage] = useState(false)
   const [prompt, setPrompt] = useState('')
   const [generatedContent, setGeneratedContent] = useState<any>(null)
   const [isEditing, setIsEditing] = useState(false)
@@ -24,6 +27,60 @@ export default function CreatePostPage() {
   const [mediaUrls, setMediaUrls] = useState<string[]>([])
   const [optimizedMediaUrls, setOptimizedMediaUrls] = useState<string[]>([])
   const [showPreview, setShowPreview] = useState(true) // Show preview by default
+  const [autoGenerateImage, setAutoGenerateImage] = useState(true) // Auto-generate images by default
+  const [isScheduleModalOpen, setIsScheduleModalOpen] = useState(false)
+  const [savedPostId, setSavedPostId] = useState<string | null>(null)
+
+  const handleGenerateImage = async (postContent: string) => {
+    if (!autoGenerateImage || mediaUrls.length > 0) {
+      return // Skip if auto-generate is disabled or images already uploaded
+    }
+
+    setIsGeneratingImage(true)
+    try {
+      const response = await fetch('/api/ai/generate-image', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          mode: 'post-based',
+          postContent,
+          platform: 'linkedin',
+          style: 'professional',
+        }),
+      })
+
+      const data = await response.json()
+
+      if (!response.ok) {
+        console.error('Failed to generate image:', data.error)
+        toast({
+          title: '⚠️ Image Generation Info',
+          description: data.error || 'Could not generate image. You can upload manually or try again.',
+          variant: 'default',
+        })
+        return
+      }
+
+      if (data.success && data.image?.cloudinaryUrl) {
+        // Add generated image to media URLs
+        setMediaUrls([data.image.cloudinaryUrl])
+        toast({
+          title: '🎨 Image Generated',
+          description: 'AI-generated image added to your post',
+        })
+      }
+    } catch (error: any) {
+      console.error('Image generation error:', error)
+      toast({
+        title: '⚠️ Image Generation Failed',
+        description: 'Could not generate image. You can upload manually or try again later.',
+      })
+    } finally {
+      setIsGeneratingImage(false)
+    }
+  }
 
   const handleGenerate = async () => {
     if (!prompt.trim()) {
@@ -66,6 +123,11 @@ export default function CreatePostPage() {
         title: 'Success',
         description: `Content generated in ${(data.content.generationTime / 1000).toFixed(2)}s`,
       })
+
+      // Generate image after content is generated (if enabled)
+      if (autoGenerateImage && mediaUrls.length === 0) {
+        await handleGenerateImage(data.content.text)
+      }
     } catch (error: any) {
       toast({
         title: 'Error',
@@ -100,6 +162,9 @@ export default function CreatePostPage() {
         throw new Error('Failed to save draft')
       }
 
+      const data = await response.json()
+      setSavedPostId(data.id) // Save post ID for scheduling
+
       toast({
         title: 'Success',
         description: 'Draft saved successfully',
@@ -113,6 +178,57 @@ export default function CreatePostPage() {
         variant: 'destructive',
       })
     }
+  }
+
+  const handleScheduleClick = async () => {
+    // First save as draft if not already saved
+    if (!savedPostId) {
+      try {
+        const response = await fetch('/api/posts', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            content: editedContent,
+            title: generatedContent?.title || prompt.substring(0, 100),
+            status: 'DRAFT',
+            mediaUrls,
+            aiGenerated: true,
+            aiModel: generatedContent?.model,
+            aiConfidence: generatedContent?.confidence,
+            originalPrompt: prompt,
+          }),
+        })
+
+        if (!response.ok) {
+          throw new Error('Failed to save post')
+        }
+
+        const data = await response.json()
+        setSavedPostId(data.id)
+        
+        // Open schedule modal
+        setIsScheduleModalOpen(true)
+      } catch (error: any) {
+        toast({
+          title: 'Error',
+          description: error.message || 'Failed to save post',
+          variant: 'destructive',
+        })
+      }
+    } else {
+      // Post already saved, just open schedule modal
+      setIsScheduleModalOpen(true)
+    }
+  }
+
+  const handleScheduleSuccess = () => {
+    toast({
+      title: 'Success',
+      description: 'Post scheduled successfully',
+    })
+    router.push('/dashboard/posts')
   }
 
   return (
@@ -185,6 +301,30 @@ export default function CreatePostPage() {
                       {mediaUrls.length} image{mediaUrls.length > 1 ? 's' : ''} uploaded
                     </p>
                   )}
+                  
+                  {/* Auto-generate image option */}
+                  <div className="flex items-center space-x-2 mt-3 p-3 bg-blue-50 rounded-lg border border-blue-200">
+                    <Checkbox
+                      id="auto-generate-image"
+                      checked={autoGenerateImage}
+                      onCheckedChange={(checked) => setAutoGenerateImage(checked as boolean)}
+                      disabled={mediaUrls.length > 0}
+                    />
+                    <label
+                      htmlFor="auto-generate-image"
+                      className="text-sm font-medium leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70 cursor-pointer"
+                    >
+                      <div className="flex items-center gap-2">
+                        <Wand2 className="h-4 w-4 text-blue-600" />
+                        <span>Auto-generate AI image for this post</span>
+                      </div>
+                      <p className="text-xs text-gray-600 mt-1 font-normal">
+                        {mediaUrls.length > 0 
+                          ? '✓ Images already uploaded' 
+                          : 'AI will create a professional image based on your content'}
+                      </p>
+                    </label>
+                  </div>
                 </div>
 
                 <div>
@@ -207,13 +347,14 @@ export default function CreatePostPage() {
                 <div className="flex flex-col sm:flex-row gap-3">
                   <Button
                     onClick={handleGenerate}
-                    disabled={isGenerating || !prompt.trim()}
+                    disabled={isGenerating || isGeneratingImage || !prompt.trim()}
                     className="flex-1 sm:flex-initial"
                   >
-                    {isGenerating ? (
+                    {isGenerating || isGeneratingImage ? (
                       <>
                         <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                        Generating...
+                        {isGenerating && 'Generating content...'}
+                        {!isGenerating && isGeneratingImage && '🎨 Creating image...'}
                       </>
                     ) : (
                       <>
@@ -227,7 +368,7 @@ export default function CreatePostPage() {
                     <Button
                       variant="outline"
                       onClick={handleGenerate}
-                      disabled={isGenerating}
+                      disabled={isGenerating || isGeneratingImage}
                       className="flex-1 sm:flex-initial"
                     >
                       <RefreshCw className="mr-2 h-4 w-4" />
@@ -297,9 +438,10 @@ export default function CreatePostPage() {
                           Save as Draft
                         </Button>
                         <Button 
+                          onClick={handleScheduleClick}
                           className="w-full sm:w-auto sm:ml-auto"
                         >
-                          <Send className="mr-2 h-4 w-4" />
+                          <Calendar className="mr-2 h-4 w-4" />
                           Schedule Post
                         </Button>
                       </div>
@@ -311,10 +453,38 @@ export default function CreatePostPage() {
                 {showPreview && (
                   <div className="space-y-4">
                     <Card className="p-4">
-                      <h3 className="text-lg font-semibold mb-2">LinkedIn Preview</h3>
-                      <p className="text-sm text-gray-600 mb-4">
-                        This is how your post will appear on LinkedIn
-                      </p>
+                      <div className="flex items-center justify-between mb-4">
+                        <div>
+                          <h3 className="text-lg font-semibold">LinkedIn Preview</h3>
+                          <p className="text-sm text-gray-600">
+                            This is how your post will appear on LinkedIn
+                          </p>
+                        </div>
+                        
+                        {/* Manual image generation button */}
+                        {mediaUrls.length === 0 && (
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleGenerateImage(editedContent)}
+                            disabled={isGeneratingImage || !editedContent}
+                            className="shrink-0"
+                          >
+                            {isGeneratingImage ? (
+                              <>
+                                <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                Generating...
+                              </>
+                            ) : (
+                              <>
+                                <Wand2 className="mr-2 h-3 w-3" />
+                                Generate Image
+                              </>
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      
                       <LinkedInPostPreview 
                         content={editedContent} 
                         mediaUrls={mediaUrls}
@@ -331,9 +501,10 @@ export default function CreatePostPage() {
                         Save as Draft
                       </Button>
                       <Button 
+                        onClick={handleScheduleClick}
                         className="w-full sm:w-auto sm:ml-auto"
                       >
-                        <Send className="mr-2 h-4 w-4" />
+                        <Calendar className="mr-2 h-4 w-4" />
                         Schedule Post
                       </Button>
                     </div>
@@ -384,6 +555,17 @@ export default function CreatePostPage() {
             )}
           </div>
         </main>
+
+        {/* Schedule Modal */}
+        {savedPostId && (
+          <ScheduleModal
+            isOpen={isScheduleModalOpen}
+            onClose={() => setIsScheduleModalOpen(false)}
+            selectedDate={new Date()}
+            onScheduled={handleScheduleSuccess}
+            postId={savedPostId}
+          />
+        )}
     </>
   )
 }

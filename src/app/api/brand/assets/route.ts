@@ -4,6 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { getServerSession } from 'next-auth'
 import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
+import { getCurrentUser } from '@/lib/auth/session-helpers'
 
 // GET /api/brand/assets - List all brand assets for tenant
 
@@ -14,9 +15,14 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const user = await getCurrentUser()
+    if (!user || !user.tenantId) {
+      return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
+    }
+
     const assets = await prisma.brandAsset.findMany({
       where: {
-        tenantId: session.user.tenantId
+        tenantId: user.tenantId
       },
       orderBy: [
         { isDefault: 'desc' },
@@ -42,8 +48,13 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
+    const user = await getCurrentUser()
+    if (!user || !user.tenantId) {
+      return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
+    }
+
     // Check permissions (only TENANT_ADMIN or SUPER_ADMIN can manage brand assets)
-    if (session.user.role !== 'TENANT_ADMIN' && session.user.role !== 'SUPER_ADMIN') {
+    if (user.role !== 'TENANT_ADMIN' && user.role !== 'SUPER_ADMIN') {
       return NextResponse.json(
         { error: 'Insufficient permissions' },
         { status: 403 }
@@ -63,14 +74,14 @@ export async function POST(request: NextRequest) {
 
     // If this is the first asset, make it default
     const existingAssets = await prisma.brandAsset.count({
-      where: { tenantId: session.user.tenantId }
+      where: { tenantId: user.tenantId }
     })
     const isFirstAsset = existingAssets === 0
 
     // Create brand asset
     const asset = await prisma.brandAsset.create({
       data: {
-        tenantId: session.user.tenantId,
+        tenantId: user.tenantId,
         name,
         type,
         fileUrl,
