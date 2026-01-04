@@ -11,6 +11,7 @@ export const dynamic = 'force-dynamic'
  */
 export async function GET(req: NextRequest) {
   try {
+    console.log('🎯 [drive-media] API called - Build: Jan 4, 2026 - 14:30 UTC')
     // Get session directly
     const session = await getServerSession(authOptions)
     
@@ -81,6 +82,15 @@ export async function GET(req: NextRequest) {
       createdAt: item.syncedAt.toISOString(),
       updatedAt: item.lastProcessedAt?.toISOString() || item.syncedAt.toISOString(),
     }))
+
+    console.log('✅ [drive-media] Returning mapped media:', {
+      count: mappedMedia.length,
+      firstItem: mappedMedia[0] ? {
+        fileName: mappedMedia[0].fileName,
+        mediaUrl: mappedMedia[0].mediaUrl?.substring(0, 60) + '...',
+        status: mappedMedia[0].status
+      } : null
+    })
 
     return NextResponse.json({
       success: true,

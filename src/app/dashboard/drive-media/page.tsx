@@ -51,10 +51,22 @@ export default function DrivMediaPage() {
   const fetchMedia = async () => {
     try {
       setIsLoading(true)
+      console.log('🔍 [drive-media UI] Fetching media...')
       const response = await fetch('/api/drive-media')
+      console.log('📡 [drive-media UI] Response status:', response.status)
+      
       if (response.ok) {
         const data = await response.json()
+        console.log('📊 [drive-media UI] Received data:', {
+          success: data.success,
+          count: data.count,
+          hasMedia: !!data.media,
+          mediaLength: data.media?.length || 0,
+          firstItem: data.media?.[0]
+        })
         setMedia(data.media || [])
+      } else {
+        console.error('❌ [drive-media UI] Response not OK:', response.status, response.statusText)
       }
     } catch (error) {
       console.error('Failed to fetch media:', error)
