@@ -1,19 +1,26 @@
 export const dynamic = 'force-dynamic'
 
 import { NextRequest, NextResponse } from 'next/server'
+import { getServerSession } from 'next-auth'
+import { authOptions } from '@/lib/auth'
 import { prisma } from '@/lib/prisma'
-import { getCurrentUser } from '@/lib/auth/session-helpers'
 
 // GET /api/brand/assets - List all brand assets for tenant
 
 export async function GET(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!user.tenantId) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, tenantId: true }
+    })
+
+    if (!user || !user.tenantId) {
       return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
     }
 
@@ -40,12 +47,18 @@ export async function GET(request: NextRequest) {
 // POST /api/brand/assets - Create new brand asset
 export async function POST(request: NextRequest) {
   try {
-    const user = await getCurrentUser()
-    if (!user) {
+    const session = await getServerSession(authOptions)
+    
+    if (!session?.user?.id) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    if (!user.tenantId) {
+    const user = await prisma.user.findUnique({
+      where: { id: session.user.id },
+      select: { id: true, tenantId: true, role: true }
+    })
+
+    if (!user || !user.tenantId) {
       return NextResponse.json({ error: 'No tenant found' }, { status: 404 })
     }
 
