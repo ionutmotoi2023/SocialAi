@@ -63,12 +63,18 @@ export default function CreatePostPage() {
         return
       }
 
-      if (data.success && data.image?.cloudinaryUrl) {
+      if (data.success && data.image?.imageUrl) {
         // Add generated image to media URLs
-        setMediaUrls([data.image.cloudinaryUrl])
+        setMediaUrls([data.image.imageUrl])
         toast({
           title: '🎨 Image Generated',
           description: 'AI-generated image added to your post',
+        })
+      } else {
+        console.warn('Image generated but no imageUrl in response:', data)
+        toast({
+          title: '⚠️ Image Generation Issue',
+          description: 'Image was generated but could not be added to post.',
         })
       }
     } catch (error: any) {
