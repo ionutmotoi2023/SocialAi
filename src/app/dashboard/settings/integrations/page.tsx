@@ -7,7 +7,8 @@ import { useSession } from 'next-auth/react'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Badge } from '@/components/ui/badge'
-import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud } from 'lucide-react'
+import { Input } from '@/components/ui/input'
+import { Linkedin, CheckCircle, XCircle, Loader2, ExternalLink, HardDrive, Cloud, Settings, FolderOpen } from 'lucide-react'
 import { useToast } from '@/hooks/use-toast'
 import { format } from 'date-fns'
 
@@ -40,7 +41,7 @@ interface GoogleDriveIntegration {
   id: string
   provider: string
   email?: string
-  folderPath?: string
+  syncFolderPath?: string
   isActive: boolean
   lastSyncAt?: string
   syncedFilesCount?: number
@@ -57,6 +58,9 @@ export default function IntegrationsPage() {
   const [disconnectingId, setDisconnectingId] = useState<string | null>(null)
   const [isDriveConnecting, setIsDriveConnecting] = useState(false)
   const [isDriveDisconnecting, setIsDriveDisconnecting] = useState(false)
+  const [isEditingFolder, setIsEditingFolder] = useState(false)
+  const [folderPath, setFolderPath] = useState('/')
+  const [isSavingFolder, setIsSavingFolder] = useState(false)
 
   useEffect(() => {
     let mounted = true
@@ -108,6 +112,7 @@ export default function IntegrationsPage() {
         const data = await response.json()
         if (data.connected && data.integration) {
           setDriveIntegration(data.integration)
+          setFolderPath(data.integration.syncFolderPath || '/')
         } else {
           setDriveIntegration(null)
         }
@@ -267,6 +272,38 @@ export default function IntegrationsPage() {
       })
     } finally {
       setIsDriveDisconnecting(false)
+    }
+  }
+
+  const handleSaveFolderPath = async () => {
+    setIsSavingFolder(true)
+
+    try {
+      const response = await fetch('/api/integrations/google-drive/status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ syncFolderPath: folderPath }),
+      })
+
+      if (!response.ok) {
+        throw new Error('Failed to update folder path')
+      }
+
+      toast({
+        title: 'Success',
+        description: 'Sync folder updated successfully',
+      })
+
+      setIsEditingFolder(false)
+      fetchDriveIntegration()
+    } catch (error: any) {
+      toast({
+        title: 'Error',
+        description: error.message || 'Failed to update folder path',
+        variant: 'destructive',
+      })
+    } finally {
+      setIsSavingFolder(false)
     }
   }
 
@@ -543,7 +580,15 @@ export default function IntegrationsPage() {
                               <Badge className="bg-green-500">Active</Badge>
                             </div>
                             <p className="text-sm text-gray-500 mt-1">
-                              Folder: {driveIntegration.folderPath || '/SocialAI'}
+                              Sync Folder: <span className="font-medium">{driveIntegration.syncFolderPath || '/'}</span>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="ml-2 h-6 px-2"
+                                onClick={() => setIsEditingFolder(!isEditingFolder)}
+                              >
+                                <Settings className="h-3 w-3" />
+                              </Button>
                             </p>
                             <p className="text-sm text-gray-500">
                               Connected: {formatDate(driveIntegration.createdAt)}
@@ -575,6 +620,68 @@ export default function IntegrationsPage() {
                         </Button>
                       </div>
                     </div>
+
+                    {/* Folder Configuration */}
+                    {isEditingFolder && (
+                      <div className="p-4 border-2 border-blue-200 rounded-lg bg-blue-50">
+                        <div className="flex items-start gap-3">
+                          <FolderOpen className="h-5 w-5 text-blue-600 mt-0.5" />
+                          <div className="flex-1">
+                            <h4 className="font-semibold text-blue-900 mb-2">Configure Sync Folder</h4>
+                            <p className="text-sm text-blue-800 mb-3">
+                              Specify the folder path in your Google Drive to sync media from.
+                            </p>
+                            <div className="space-y-3">
+                              <div>
+                                <label className="text-sm font-medium text-blue-900 mb-1 block">
+                                  Folder Path
+                                </label>
+                                <Input
+                                  type="text"
+                                  value={folderPath}
+                                  onChange={(e) => setFolderPath(e.target.value)}
+                                  placeholder="/"
+                                  className="bg-white"
+                                />
+                                <p className="text-xs text-blue-700 mt-1">
+                                  Examples: <code className="bg-blue-100 px-1 rounded">/</code> (root), 
+                                  <code className="bg-blue-100 px-1 rounded ml-1">/Social Media</code>, 
+                                  <code className="bg-blue-100 px-1 rounded ml-1">/Marketing/Posts</code>
+                                </p>
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  onClick={handleSaveFolderPath}
+                                  disabled={isSavingFolder}
+                                  size="sm"
+                                  className="bg-blue-600 hover:bg-blue-700"
+                                >
+                                  {isSavingFolder ? (
+                                    <>
+                                      <Loader2 className="mr-2 h-3 w-3 animate-spin" />
+                                      Saving...
+                                    </>
+                                  ) : (
+                                    'Save Changes'
+                                  )}
+                                </Button>
+                                <Button
+                                  variant="outline"
+                                  size="sm"
+                                  onClick={() => {
+                                    setIsEditingFolder(false)
+                                    setFolderPath(driveIntegration?.syncFolderPath || '/')
+                                  }}
+                                  disabled={isSavingFolder}
+                                >
+                                  Cancel
+                                </Button>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    )}
 
                     {/* Info */}
                     <div className="p-4 bg-green-50 rounded-lg border border-green-200">
