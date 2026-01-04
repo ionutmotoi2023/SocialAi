@@ -51,7 +51,7 @@ export function DashboardSidebar() {
         }
 
         // If no logo in session, try to fetch from Brand Assets API
-        const response = await fetch('/api/settings/brand-assets')
+        const response = await fetch('/api/brand/assets')
         if (response.ok) {
           const data = await response.json()
           // Get the first brand asset (usually the company logo)
