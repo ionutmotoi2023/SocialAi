@@ -136,11 +136,13 @@ export async function POST(request: NextRequest) {
         const fileBuffer = await downloadFile(accessToken, file.id!)
 
         // Upload to Cloudinary
-        const cloudinaryUrl = await uploadToCloudinary(
+        const cloudinaryResult = await uploadToCloudinary(
           fileBuffer,
           file.name!,
           file.mimeType!.startsWith('video/') ? 'video' : 'image'
         )
+
+        console.log(`📤 Uploaded to Cloudinary: ${cloudinaryResult.secureUrl}`)
 
         // Save to database
         await prisma.syncedMedia.create({
@@ -151,7 +153,7 @@ export async function POST(request: NextRequest) {
             originalFileName: file.name!,
             originalFileUrl: file.webContentLink || '',
             originalFolderPath: integration.syncFolderPath,
-            localUrl: cloudinaryUrl,
+            localUrl: cloudinaryResult.secureUrl, // Use only the secure URL string
             mediaType: file.mimeType!.startsWith('video/') ? 'video' : 'image',
             mimeType: file.mimeType!,
             fileSize: file.size ? parseInt(file.size) : 0,
