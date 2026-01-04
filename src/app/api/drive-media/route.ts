@@ -24,10 +24,18 @@ export async function GET(req: NextRequest) {
     // Get user from database
     const user = await prisma.user.findUnique({
       where: { id: session.user.id },
-      select: { id: true, tenantId: true }
+      select: { id: true, tenantId: true, email: true }
+    })
+
+    console.log('👤 User lookup:', {
+      userId: session.user.id,
+      userEmail: session.user.email,
+      foundUser: !!user,
+      tenantId: user?.tenantId
     })
 
     if (!user || !user.tenantId) {
+      console.error('❌ No tenant found for user:', session.user.id)
       return NextResponse.json(
         { error: 'No tenant found' },
         { status: 404 }
@@ -35,14 +43,25 @@ export async function GET(req: NextRequest) {
     }
 
     // Fetch synced media
+    console.log('🔍 Fetching synced media for tenant:', user.tenantId)
+    
     const media = await prisma.syncedMedia.findMany({
       where: {
         tenantId: user.tenantId,
       },
       orderBy: {
-        createdAt: 'desc',
+        syncedAt: 'desc',
       },
       take: 100, // Limit to 100 most recent
+    })
+
+    console.log('📊 Found synced media:', {
+      count: media.length,
+      files: media.map(m => ({ 
+        id: m.id, 
+        fileName: m.originalFileName,
+        syncedAt: m.syncedAt 
+      }))
     })
 
     return NextResponse.json({
