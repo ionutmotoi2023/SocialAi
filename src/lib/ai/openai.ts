@@ -247,6 +247,14 @@ function buildSystemPrompt(params: GenerateContentParams): string {
   }
 
   prompt += `\n\nImportant: Create engaging, authentic content that resonates with the target audience. Avoid generic or corporate jargon. Never use placeholders like [Company Name], [Product Name], etc. - always use the specific brand details provided above.`
+  
+  prompt += `\n\n⚠️ CRITICAL: Generate ONLY the social media post content itself. Do NOT include:
+- Questions to yourself like "What would you like to post about?"
+- Assistant responses or greetings like "Hello!", "Sure!", "Here's a post..."
+- Meta-commentary about the post
+- Instructions or explanations
+  
+Just write the post content directly as it would appear on ${platform}. Start immediately with the post text.`
 
   return prompt
 }
@@ -267,13 +275,13 @@ function getLengthGuidance(length: string): string {
 function getMaxTokens(length?: string): number {
   switch (length) {
     case 'short':
-      return 200
+      return 300
     case 'medium':
-      return 400
-    case 'long':
       return 600
+    case 'long':
+      return 1000
     default:
-      return 400
+      return 600 // Increased default for fuller content
   }
 }
 
